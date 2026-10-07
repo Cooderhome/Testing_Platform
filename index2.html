@@ -1,0 +1,1255 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Investigation Workspace</title>
+
+<style>
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    font-family: Inter, Arial, sans-serif;
+    background: #f4f6fa;
+    color: #182230;
+}
+
+/* ================= HEADER ================= */
+
+.header {
+    height: 70px;
+    background: #111827;
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 24px;
+}
+
+.logo {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.logo-icon {
+    width: 42px;
+    height: 42px;
+    border-radius: 12px;
+    background: #2563eb;
+    display: grid;
+    place-items: center;
+    font-size: 22px;
+}
+
+.logo h1 {
+    margin: 0;
+    font-size: 19px;
+}
+
+.logo small {
+    color: #9ca3af;
+}
+
+.header-actions {
+    display: flex;
+    gap: 10px;
+}
+
+.btn {
+    border: 0;
+    padding: 10px 15px;
+    border-radius: 9px;
+    cursor: pointer;
+    font-weight: 600;
+}
+
+.btn-dark {
+    background: #374151;
+    color: white;
+}
+
+.btn-primary {
+    background: #2563eb;
+    color: white;
+}
+
+/* ================= INVESTIGATION BAR ================= */
+
+.investigation-bar {
+    background: white;
+    border-bottom: 1px solid #e5e7eb;
+    padding: 16px 24px;
+}
+
+.investigation-title {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.investigation-title h2 {
+    margin: 0;
+    font-size: 20px;
+}
+
+.status {
+    background: #dcfce7;
+    color: #166534;
+    padding: 6px 10px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 700;
+}
+
+.summary {
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+    gap: 12px;
+    margin-top: 14px;
+}
+
+.summary-card {
+    border: 1px solid #e5e7eb;
+    border-radius: 10px;
+    padding: 12px;
+    background: #fafafa;
+}
+
+.summary-card span {
+    display: block;
+    color: #6b7280;
+    font-size: 12px;
+}
+
+.summary-card strong {
+    font-size: 18px;
+}
+
+/* ================= MAIN ================= */
+
+.workspace {
+    padding: 18px;
+    display: grid;
+    grid-template-columns: 1.5fr 1fr;
+    gap: 18px;
+}
+
+.panel {
+    background: white;
+    border: 1px solid #e5e7eb;
+    border-radius: 14px;
+    overflow: hidden;
+    box-shadow: 0 2px 8px rgba(0,0,0,.04);
+}
+
+.panel-header {
+    height: 54px;
+    padding: 0 16px;
+    border-bottom: 1px solid #e5e7eb;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.panel-header h3 {
+    margin: 0;
+    font-size: 15px;
+}
+
+.panel-header span {
+    color: #6b7280;
+    font-size: 12px;
+}
+
+.panel-body {
+    padding: 15px;
+}
+
+/* ================= GRAPH ================= */
+
+.graph-panel {
+    min-height: 470px;
+}
+
+.graph {
+    position: relative;
+    height: 390px;
+    overflow: hidden;
+    background:
+        radial-gradient(circle at 20% 20%, rgba(37,99,235,.05), transparent 25%),
+        radial-gradient(circle at 80% 70%, rgba(16,185,129,.05), transparent 25%),
+        #fbfcfe;
+}
+
+.graph-grid {
+    position: absolute;
+    inset: 0;
+    background-image:
+        linear-gradient(#e5e7eb 1px, transparent 1px),
+        linear-gradient(90deg, #e5e7eb 1px, transparent 1px);
+    background-size: 40px 40px;
+    opacity: .35;
+}
+
+.node {
+    position: absolute;
+    width: 92px;
+    height: 92px;
+    border-radius: 50%;
+    background: white;
+    border: 3px solid #94a3b8;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    cursor: pointer;
+    z-index: 3;
+    transition: .25s;
+    box-shadow: 0 8px 18px rgba(0,0,0,.08);
+}
+
+.node:hover,
+.node.active {
+    transform: scale(1.1);
+    border-color: #2563eb;
+    box-shadow: 0 0 0 6px rgba(37,99,235,.1);
+}
+
+.node-icon {
+    font-size: 28px;
+}
+
+.node-label {
+    font-size: 11px;
+    font-weight: 700;
+    margin-top: 4px;
+}
+
+.node-sub {
+    font-size: 9px;
+    color: #6b7280;
+}
+
+.node.account {
+    border-radius: 15px;
+}
+
+.node.company {
+    border-radius: 12px;
+}
+
+.n1 { left: 42%; top: 38%; }
+.n2 { left: 12%; top: 16%; }
+.n3 { left: 73%; top: 14%; }
+.n4 { left: 75%; top: 67%; }
+.n5 { left: 13%; top: 69%; }
+
+.connection {
+    position: absolute;
+    height: 3px;
+    background: #94a3b8;
+    transform-origin: left center;
+    z-index: 1;
+}
+
+.c1 {
+    width: 260px;
+    left: 22%;
+    top: 30%;
+    transform: rotate(18deg);
+}
+
+.c2 {
+    width: 260px;
+    left: 51%;
+    top: 42%;
+    transform: rotate(-18deg);
+}
+
+.c3 {
+    width: 250px;
+    left: 50%;
+    top: 51%;
+    transform: rotate(28deg);
+}
+
+.c4 {
+    width: 240px;
+    left: 22%;
+    top: 67%;
+    transform: rotate(-10deg);
+}
+
+.money {
+    position: absolute;
+    z-index: 4;
+    background: #fbbf24;
+    color: #111827;
+    border-radius: 20px;
+    padding: 5px 8px;
+    font-size: 10px;
+    font-weight: 800;
+    box-shadow: 0 4px 8px rgba(0,0,0,.15);
+}
+
+.m1 { left: 31%; top: 29%; }
+.m2 { left: 60%; top: 31%; }
+.m3 { left: 61%; top: 58%; }
+.m4 { left: 32%; top: 61%; }
+
+/* ================= TIMELINE ================= */
+
+.timeline-panel {
+    grid-column: 1 / -1;
+}
+
+.timeline {
+    padding: 20px 10px;
+    display: flex;
+    align-items: flex-start;
+    overflow-x: auto;
+}
+
+.timeline-event {
+    min-width: 145px;
+    position: relative;
+    text-align: center;
+    cursor: pointer;
+}
+
+.timeline-event::after {
+    content: "";
+    position: absolute;
+    top: 23px;
+    left: 72px;
+    width: 145px;
+    height: 3px;
+    background: #d1d5db;
+}
+
+.timeline-event:last-child::after {
+    display: none;
+}
+
+.timeline-dot {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    background: white;
+    border: 3px solid #94a3b8;
+    display: grid;
+    place-items: center;
+    margin: auto;
+    position: relative;
+    z-index: 2;
+}
+
+.timeline-event:hover .timeline-dot,
+.timeline-event.active .timeline-dot {
+    border-color: #2563eb;
+    transform: scale(1.1);
+}
+
+.timeline-time {
+    margin-top: 8px;
+    font-size: 11px;
+    color: #6b7280;
+}
+
+.timeline-title {
+    margin-top: 4px;
+    font-size: 12px;
+    font-weight: 700;
+}
+
+/* ================= BOTTOM ================= */
+
+.bottom-grid {
+    grid-column: 1 / -1;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 18px;
+}
+
+/* ================= CHART ================= */
+
+.chart-area {
+    height: 230px;
+    display: flex;
+    align-items: end;
+    gap: 25px;
+    padding: 20px;
+    border-bottom: 1px solid #e5e7eb;
+}
+
+.bar-group {
+    flex: 1;
+    height: 100%;
+    display: flex;
+    align-items: end;
+    justify-content: center;
+    gap: 5px;
+}
+
+.bar {
+    width: 28px;
+    border-radius: 6px 6px 0 0;
+}
+
+.in {
+    background: #2563eb;
+}
+
+.out {
+    background: #10b981;
+}
+
+.chart-label {
+    text-align: center;
+    font-size: 11px;
+    color: #6b7280;
+    margin-top: 8px;
+}
+
+/* ================= ALERTS ================= */
+
+.alert {
+    border: 1px solid #e5e7eb;
+    border-radius: 10px;
+    padding: 13px;
+    margin-bottom: 10px;
+    cursor: pointer;
+    transition: .2s;
+}
+
+.alert:hover,
+.alert.active {
+    border-color: #2563eb;
+    background: #f8fbff;
+}
+
+.alert-top {
+    display: flex;
+    justify-content: space-between;
+}
+
+.alert-title {
+    font-weight: 800;
+    font-size: 13px;
+}
+
+.alert-time {
+    color: #6b7280;
+    font-size: 11px;
+}
+
+.alert p {
+    margin: 7px 0 0;
+    color: #6b7280;
+    font-size: 12px;
+    line-height: 1.5;
+}
+
+.badge {
+    display: inline-block;
+    margin-top: 8px;
+    padding: 4px 7px;
+    border-radius: 6px;
+    background: #fef3c7;
+    color: #92400e;
+    font-size: 10px;
+    font-weight: 700;
+}
+
+/* ================= MAP ================= */
+
+.map {
+    height: 350px;
+    position: relative;
+    overflow: hidden;
+    background:
+        linear-gradient(30deg, #e9f1e8 12%, transparent 12.5%, transparent 87%, #e9f1e8 87.5%),
+        linear-gradient(150deg, #e9f1e8 12%, transparent 12.5%, transparent 87%, #e9f1e8 87.5%),
+        #eef4ea;
+    background-size: 70px 70px;
+}
+
+.road {
+    position: absolute;
+    height: 7px;
+    background: #d1d5db;
+    transform-origin: left center;
+}
+
+.r1 {
+    width: 600px;
+    top: 45%;
+    left: -50px;
+    transform: rotate(12deg);
+}
+
+.r2 {
+    width: 500px;
+    top: 70%;
+    left: 10%;
+    transform: rotate(-30deg);
+}
+
+.location {
+    position: absolute;
+    cursor: pointer;
+    font-size: 25px;
+}
+
+.location span {
+    display: block;
+    background: white;
+    border-radius: 6px;
+    padding: 4px 6px;
+    font-size: 9px;
+    font-weight: 700;
+    box-shadow: 0 2px 6px rgba(0,0,0,.15);
+}
+
+.loc1 { left: 22%; top: 34%; }
+.loc2 { left: 61%; top: 22%; }
+.loc3 { left: 72%; top: 65%; }
+.loc4 { left: 38%; top: 76%; }
+
+/* ================= EXPLANATION ================= */
+
+.explanation {
+    grid-column: 1 / -1;
+    background: #111827;
+    color: white;
+    border-radius: 14px;
+    padding: 22px;
+}
+
+.explanation h3 {
+    margin-top: 0;
+}
+
+.story {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 15px;
+}
+
+.story-card {
+    background: #1f2937;
+    padding: 15px;
+    border-radius: 10px;
+}
+
+.story-card span {
+    font-size: 12px;
+    color: #9ca3af;
+}
+
+.story-card strong {
+    display: block;
+    margin-top: 7px;
+    font-size: 14px;
+}
+
+/* ================= RESPONSIVE ================= */
+
+@media(max-width: 1000px) {
+    .workspace {
+        grid-template-columns: 1fr;
+    }
+
+    .summary {
+        grid-template-columns: repeat(3, 1fr);
+    }
+
+    .bottom-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media(max-width: 650px) {
+
+    .header {
+        padding: 0 12px;
+    }
+
+    .header-actions {
+        display: none;
+    }
+
+    .summary {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .workspace {
+        padding: 10px;
+    }
+
+    .story {
+        grid-template-columns: 1fr;
+    }
+
+    .graph {
+        height: 350px;
+    }
+}
+</style>
+</head>
+
+<body>
+
+<!-- ================= HEADER ================= -->
+
+<header class="header">
+
+    <div class="logo">
+        <div class="logo-icon">🔎</div>
+        <div>
+            <h1>Investigation Workspace</h1>
+            <small>Follow the money. Understand the story.</small>
+        </div>
+    </div>
+
+    <div class="header-actions">
+        <button class="btn btn-dark">🧒 Simple View</button>
+        <button class="btn btn-dark">📄 Export Report</button>
+        <button class="btn btn-primary">＋ Add Note</button>
+    </div>
+
+</header>
+
+
+<!-- ================= INVESTIGATION ================= -->
+
+<section class="investigation-bar">
+
+    <div class="investigation-title">
+
+        <div>
+            <h2>Investigation #INV-2026-001</h2>
+            <span style="color:#6b7280;font-size:12px;">
+                Customer: Account X • Period: Sep 28 – Oct 1, 2026
+            </span>
+        </div>
+
+        <div class="status">
+            ● INVESTIGATION ACTIVE
+        </div>
+
+    </div>
+
+
+    <div class="summary">
+
+        <div class="summary-card">
+            <span>🚨 Alerts</span>
+            <strong>3</strong>
+        </div>
+
+        <div class="summary-card">
+            <span>🏦 Accounts</span>
+            <strong>12</strong>
+        </div>
+
+        <div class="summary-card">
+            <span>👤 People</span>
+            <strong>7</strong>
+        </div>
+
+        <div class="summary-card">
+            <span>🏢 Companies</span>
+            <strong>4</strong>
+        </div>
+
+        <div class="summary-card">
+            <span>💰 Money In</span>
+            <strong>ETB 5.2M</strong>
+        </div>
+
+        <div class="summary-card">
+            <span>💸 Money Out</span>
+            <strong>ETB 4.9M</strong>
+        </div>
+
+    </div>
+
+</section>
+
+
+<!-- ================= WORKSPACE ================= -->
+
+<main class="workspace">
+
+
+<!-- ================= GRAPH ================= -->
+
+<section class="panel graph-panel">
+
+    <div class="panel-header">
+        <h3>🕸️ Money Network</h3>
+        <span>WHO is connected?</span>
+    </div>
+
+    <div class="graph">
+
+        <div class="graph-grid"></div>
+
+        <div class="connection c1"></div>
+        <div class="connection c2"></div>
+        <div class="connection c3"></div>
+        <div class="connection c4"></div>
+
+        <div class="money m1">💰 2M</div>
+        <div class="money m2">💰 1.9M</div>
+        <div class="money m3">💰 800K</div>
+        <div class="money m4">💰 500K</div>
+
+
+        <div class="node person n1 active" onclick="selectNode(this,'Account X')">
+            <div class="node-icon">🏦</div>
+            <div class="node-label">Account X</div>
+            <div class="node-sub">Account</div>
+        </div>
+
+        <div class="node person n2" onclick="selectNode(this,'Person A')">
+            <div class="node-icon">👤</div>
+            <div class="node-label">Person A</div>
+            <div class="node-sub">Owner</div>
+        </div>
+
+        <div class="node company n3" onclick="selectNode(this,'Company B')">
+            <div class="node-icon">🏢</div>
+            <div class="node-label">Company B</div>
+            <div class="node-sub">Company</div>
+        </div>
+
+        <div class="node company n4" onclick="selectNode(this,'Company C')">
+            <div class="node-icon">🏢</div>
+            <div class="node-label">Company C</div>
+            <div class="node-sub">Company</div>
+        </div>
+
+        <div class="node person n5" onclick="selectNode(this,'Person D')">
+            <div class="node-icon">👤</div>
+            <div class="node-label">Person D</div>
+            <div class="node-sub">Beneficiary</div>
+        </div>
+
+    </div>
+
+</section>
+
+
+<!-- ================= MAP ================= -->
+
+<section class="panel">
+
+    <div class="panel-header">
+        <h3>🗺️ Activity Map</h3>
+        <span>WHERE?</span>
+    </div>
+
+    <div class="map">
+
+        <div class="road r1"></div>
+        <div class="road r2"></div>
+
+        <div class="location loc1">
+            🏦
+            <span>Branch</span>
+        </div>
+
+        <div class="location loc2">
+            🏧
+            <span>ATM</span>
+        </div>
+
+        <div class="location loc3">
+            🏢
+            <span>Company B</span>
+        </div>
+
+        <div class="location loc4">
+            🏪
+            <span>Merchant</span>
+        </div>
+
+    </div>
+
+</section>
+
+
+<!-- ================= TIMELINE ================= -->
+
+<section class="panel timeline-panel">
+
+    <div class="panel-header">
+        <h3>🕒 Investigation Timeline</h3>
+        <span>WHAT happened?</span>
+    </div>
+
+    <div class="timeline">
+
+        <div class="timeline-event active" onclick="selectEvent(this,'Account became active')">
+
+            <div class="timeline-dot">🏦</div>
+
+            <div class="timeline-time">08:30</div>
+
+            <div class="timeline-title">
+                Account activity
+            </div>
+
+        </div>
+
+
+        <div class="timeline-event" onclick="selectEvent(this,'ETB 2M received')">
+
+            <div class="timeline-dot">💰</div>
+
+            <div class="timeline-time">09:02</div>
+
+            <div class="timeline-title">
+                + ETB 2M
+            </div>
+
+        </div>
+
+
+        <div class="timeline-event" onclick="selectEvent(this,'New beneficiary')">
+
+            <div class="timeline-dot">🆕</div>
+
+            <div class="timeline-time">09:04</div>
+
+            <div class="timeline-title">
+                New beneficiary
+            </div>
+
+        </div>
+
+
+        <div class="timeline-event" onclick="selectEvent(this,'ETB 1.9M sent')">
+
+            <div class="timeline-dot">💸</div>
+
+            <div class="timeline-time">09:09</div>
+
+            <div class="timeline-title">
+                - ETB 1.9M
+            </div>
+
+        </div>
+
+
+        <div class="timeline-event" onclick="selectEvent(this,'Transaction burst')">
+
+            <div class="timeline-dot">💥</div>
+
+            <div class="timeline-time">09:12</div>
+
+            <div class="timeline-title">
+                Transaction burst
+            </div>
+
+        </div>
+
+
+        <div class="timeline-event" onclick="selectEvent(this,'Alert generated')">
+
+            <div class="timeline-dot">🚨</div>
+
+            <div class="timeline-time">09:15</div>
+
+            <div class="timeline-title">
+                Alert
+            </div>
+
+        </div>
+
+    </div>
+
+</section>
+
+
+<!-- ================= BOTTOM GRID ================= -->
+
+<div class="bottom-grid">
+
+
+<!-- ================= CHART ================= -->
+
+<section class="panel">
+
+    <div class="panel-header">
+
+        <h3>📊 Money Activity</h3>
+
+        <span>HOW MUCH?</span>
+
+    </div>
+
+    <div class="panel-body">
+
+        <div class="chart-area">
+
+            <div class="bar-group">
+
+                <div>
+                    <div class="bar in" style="height:75px"></div>
+                    <div class="chart-label">IN</div>
+                </div>
+
+                <div>
+                    <div class="bar out" style="height:65px"></div>
+                    <div class="chart-label">OUT</div>
+                </div>
+
+            </div>
+
+            <div class="bar-group">
+
+                <div>
+                    <div class="bar in" style="height:130px"></div>
+                    <div class="chart-label">IN</div>
+                </div>
+
+                <div>
+                    <div class="bar out" style="height:110px"></div>
+                    <div class="chart-label">OUT</div>
+                </div>
+
+            </div>
+
+            <div class="bar-group">
+
+                <div>
+                    <div class="bar in" style="height:190px"></div>
+                    <div class="chart-label">IN</div>
+                </div>
+
+                <div>
+                    <div class="bar out" style="height:170px"></div>
+                    <div class="chart-label">OUT</div>
+                </div>
+
+            </div>
+
+        </div>
+
+        <div style="display:flex;justify-content:space-around;padding:15px 0;">
+
+            <div>
+                <small style="color:#6b7280;">Total In</small>
+                <br>
+                <strong>ETB 5.2M</strong>
+            </div>
+
+            <div>
+                <small style="color:#6b7280;">Total Out</small>
+                <br>
+                <strong>ETB 4.9M</strong>
+            </div>
+
+            <div>
+                <small style="color:#6b7280;">Turnover</small>
+                <br>
+                <strong>94%</strong>
+            </div>
+
+        </div>
+
+    </div>
+
+</section>
+
+
+<!-- ================= ALERTS ================= -->
+
+<section class="panel">
+
+    <div class="panel-header">
+
+        <h3>🚨 Investigation Alerts</h3>
+
+        <span>WHAT NEEDS ATTENTION?</span>
+
+    </div>
+
+    <div class="panel-body">
+
+        <div class="alert active" onclick="selectAlert(this,'Rapid Pass-Through')">
+
+            <div class="alert-top">
+
+                <div class="alert-title">
+                    🏃 Rapid Pass-Through
+                </div>
+
+                <div class="alert-time">
+                    09:15
+                </div>
+
+            </div>
+
+            <p>
+                Most of the received money left the account within a few minutes.
+            </p>
+
+            <span class="badge">
+                Needs investigation
+            </span>
+
+        </div>
+
+
+        <div class="alert" onclick="selectAlert(this,'New Beneficiary')">
+
+            <div class="alert-top">
+
+                <div class="alert-title">
+                    🆕 New Beneficiary
+                </div>
+
+                <div class="alert-time">
+                    09:04
+                </div>
+
+            </div>
+
+            <p>
+                A large transfer was sent to a recipient not previously observed.
+            </p>
+
+            <span class="badge">
+                Needs context
+            </span>
+
+        </div>
+
+
+        <div class="alert" onclick="selectAlert(this,'Unusual Hour')">
+
+            <div class="alert-top">
+
+                <div class="alert-title">
+                    🌙 Unusual Hour
+                </div>
+
+                <div class="alert-time">
+                    02:13
+                </div>
+
+            </div>
+
+            <p>
+                Transaction occurred at a time outside the customer's usual pattern.
+            </p>
+
+            <span class="badge">
+                Needs context
+            </span>
+
+        </div>
+
+    </div>
+
+</section>
+
+</div>
+
+
+<!-- ================= EXPLANATION ================= -->
+
+<section class="explanation">
+
+    <h3>🔍 Investigation Story</h3>
+
+    <div class="story">
+
+        <div class="story-card">
+
+            <span>01 • WHAT</span>
+
+            <strong>
+                ETB 2M entered Account X.
+            </strong>
+
+        </div>
+
+        <div class="story-card">
+
+            <span>02 • WHAT CHANGED</span>
+
+            <strong>
+                ETB 1.9M left only 7 minutes later.
+            </strong>
+
+        </div>
+
+        <div class="story-card">
+
+            <span>03 • WHO</span>
+
+            <strong>
+                Most money went to Company B.
+            </strong>
+
+        </div>
+
+        <div class="story-card">
+
+            <span>04 • NEXT QUESTION</span>
+
+            <strong>
+                What explains this money movement?
+            </strong>
+
+        </div>
+
+    </div>
+
+    <div style="margin-top:18px;color:#d1d5db;font-size:13px;">
+
+        🧠 Remember: an unusual pattern is a signal to investigate,
+        not proof that something is wrong.
+
+    </div>
+
+</section>
+
+
+</main>
+
+
+<script>
+
+/* ================= NODE SELECTION ================= */
+
+function selectNode(element, name) {
+
+    document.querySelectorAll('.node')
+        .forEach(n => n.classList.remove('active'));
+
+    element.classList.add('active');
+
+    document.querySelector('.investigation-title h2')
+        .textContent = 'Investigation • ' + name;
+
+    updateStory(
+        'Selected entity',
+        name + ' is now the focus of the investigation.',
+        'Connected transactions and relationships are highlighted.',
+        'What explains the activity around this entity?'
+    );
+}
+
+
+/* ================= TIMELINE ================= */
+
+function selectEvent(element, message) {
+
+    document.querySelectorAll('.timeline-event')
+        .forEach(e => e.classList.remove('active'));
+
+    element.classList.add('active');
+
+    updateStory(
+        'Timeline event',
+        message,
+        'Related network and evidence should now be highlighted.',
+        'What does this event mean in the wider story?'
+    );
+}
+
+
+/* ================= ALERTS ================= */
+
+function selectAlert(element, alertName) {
+
+    document.querySelectorAll('.alert')
+        .forEach(a => a.classList.remove('active'));
+
+    element.classList.add('active');
+
+    updateStory(
+        'Alert',
+        alertName,
+        'The alert identifies a pattern worth understanding.',
+        'What evidence explains this pattern?'
+    );
+}
+
+
+/* ================= STORY UPDATE ================= */
+
+function updateStory(what, changed, who, question) {
+
+    const cards = document.querySelectorAll('.story-card');
+
+    cards[0].querySelector('strong').textContent = what;
+
+    cards[1].querySelector('strong').textContent = changed;
+
+    cards[2].querySelector('strong').textContent = who;
+
+    cards[3].querySelector('strong').textContent = question;
+}
+
+
+/* ================= SIMPLE VIEW ================= */
+
+document.querySelector('.btn-dark').addEventListener('click', function() {
+
+    alert(
+        "🧒 SIMPLE VIEW\n\n" +
+        "Money came into Account X.\n\n" +
+        "💰 → 🏦 → 💨 → 🏢\n\n" +
+        "Most of the money moved out very quickly.\n\n" +
+        "The investigator now asks:\n\n" +
+        "Why?"
+    );
+
+});
+
+
+/* ================= MONEY ANIMATION ================= */
+
+const money = document.querySelectorAll('.money');
+
+money.forEach((coin, index) => {
+
+    let direction = index % 2 === 0 ? 1 : -1;
+
+    setInterval(() => {
+
+        const current = parseFloat(
+            coin.style.transform
+                .replace('translateY(', '')
+                .replace('px)', '')
+        ) || 0;
+
+        let next = current + direction * 3;
+
+        if(next > 8 || next < -8) {
+            direction *= -1;
+        }
+
+        coin.style.transform = `translateY(${next}px)`;
+
+    }, 300);
+
+});
+
+</script>
+
+</body>
+</html>
+

@@ -1,0 +1,1212 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Follow the Money 💰</title>
+    <style>
+        :root {
+            --primary: #4361ee;
+            --secondary: #3f37c9;
+            --accent: #f72585;
+            --success: #4cc9f0;
+            --warning: #f8961e;
+            --danger: #f94144;
+            --bg-color: #f8f9fa;
+            --card-bg: #ffffff;
+            --text-color: #212529;
+            --border-radius: 16px;
+            --shadow: 0 10px 20px rgba(0,0,0,0.05);
+        }
+
+        body.dark-mode {
+            --primary: #4cc9f0;
+            --secondary: #4361ee;
+            --bg-color: #121212;
+            --card-bg: #1e1e1e;
+            --text-color: #e0e0e0;
+            --shadow: 0 10px 20px rgba(0,0,0,0.2);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            overflow: hidden;
+            transition: background-color 0.3s, color 0.3s;
+        }
+
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px 30px;
+            background: var(--card-bg);
+            box-shadow: var(--shadow);
+            z-index: 10;
+        }
+
+        .header-title {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .header-title h1 {
+            font-size: 24px;
+            color: var(--primary);
+            margin-bottom: 5px;
+        }
+
+        .header-title p {
+            font-size: 14px;
+            opacity: 0.8;
+        }
+
+        .header-controls {
+            display: flex;
+            gap: 15px;
+        }
+
+        button {
+            padding: 10px 20px;
+            border: none;
+            border-radius: var(--border-radius);
+            cursor: pointer;
+            font-weight: bold;
+            background: var(--primary);
+            color: white;
+            transition: transform 0.2s, background 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            filter: brightness(1.1);
+        }
+
+        .secondary-btn {
+            background: var(--card-bg);
+            color: var(--text-color);
+            border: 2px solid var(--primary);
+        }
+
+        main {
+            display: flex;
+            flex: 1;
+            overflow: hidden;
+            padding: 20px;
+            gap: 20px;
+        }
+
+        .left-panel, .right-panel {
+            width: 300px;
+            background: var(--card-bg);
+            border-radius: var(--border-radius);
+            box-shadow: var(--shadow);
+            display: flex;
+            flex-direction: column;
+            overflow-y: auto;
+        }
+
+        .center-panel {
+            flex: 1;
+            background: var(--card-bg);
+            border-radius: var(--border-radius);
+            box-shadow: var(--shadow);
+            display: flex;
+            flex-direction: column;
+            position: relative;
+        }
+
+        .pattern-list {
+            padding: 15px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .pattern-card {
+            padding: 15px;
+            border-radius: var(--border-radius);
+            background: var(--bg-color);
+            cursor: pointer;
+            transition: all 0.2s;
+            border: 2px solid transparent;
+        }
+
+        .pattern-card:hover {
+            transform: translateX(5px);
+            border-color: var(--primary);
+        }
+
+        .pattern-card.active {
+            background: var(--primary);
+            color: white;
+            box-shadow: var(--shadow);
+        }
+
+        .pattern-icon {
+            font-size: 24px;
+            margin-bottom: 5px;
+        }
+        
+        .pattern-title {
+            font-weight: bold;
+            font-size: 14px;
+        }
+
+        .animation-container {
+            flex: 1;
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: #e9ecef;
+            border-radius: var(--border-radius) var(--border-radius) 0 0;
+        }
+
+        .dark-mode .animation-container {
+            background: #2a2a2a;
+        }
+
+        .controls {
+            padding: 15px;
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            background: var(--card-bg);
+            border-top: 1px solid rgba(0,0,0,0.1);
+            border-radius: 0 0 var(--border-radius) var(--border-radius);
+        }
+
+        .explanation-card {
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .explanation-section {
+            background: var(--bg-color);
+            padding: 15px;
+            border-radius: var(--border-radius);
+            border-left: 4px solid var(--primary);
+        }
+
+        .investigator-mode {
+            border-left-color: var(--warning);
+            background: rgba(248, 150, 30, 0.1);
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        .svg-layer {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+        }
+
+        .node {
+            transition: all 0.5s;
+        }
+        
+        .node circle {
+            fill: white;
+            stroke: var(--primary);
+            stroke-width: 4;
+        }
+
+        .dark-mode .node circle {
+            fill: #333;
+        }
+
+        .node text {
+            font-size: 24px;
+            dominant-baseline: middle;
+            text-anchor: middle;
+        }
+        
+        .node-label {
+            font-size: 14px;
+            font-weight: bold;
+            fill: var(--text-color);
+        }
+
+        .link {
+            stroke: #adb5bd;
+            stroke-width: 3;
+            stroke-dasharray: 5, 5;
+            transition: all 0.5s;
+        }
+
+        .money {
+            font-size: 20px;
+            opacity: 0;
+            transition: opacity 0.2s;
+        }
+
+        /* Animations */
+        @keyframes pulse {
+            0% { transform: translate(var(--tx, 0px), var(--ty, 0px)) scale(var(--scale, 1)); filter: drop-shadow(0 0 0 rgba(67, 97, 238, 0.7)); }
+            50% { transform: translate(var(--tx, 0px), var(--ty, 0px)) scale(calc(var(--scale, 1) * 1.1)); filter: drop-shadow(0 0 10px rgba(67, 97, 238, 0.9)); }
+            100% { transform: translate(var(--tx, 0px), var(--ty, 0px)) scale(var(--scale, 1)); filter: drop-shadow(0 0 0 rgba(67, 97, 238, 0)); }
+        }
+
+        .pulsing {
+            animation: pulse 1s infinite;
+            transform-origin: center;
+            transform-box: fill-box;
+        }
+
+        @keyframes moveMoney {
+            0% { transform: translate(var(--startX), var(--startY)); opacity: 1; }
+            100% { transform: translate(var(--endX), var(--endY)); opacity: 1; }
+        }
+
+        /* Specific scene elements */
+        .speedometer {
+            width: 200px;
+            height: 100px;
+            border-radius: 100px 100px 0 0;
+            border: 10px solid #ddd;
+            border-bottom: none;
+            position: relative;
+            margin: 20px auto;
+        }
+        
+        .needle {
+            width: 4px;
+            height: 90px;
+            background: var(--danger);
+            position: absolute;
+            bottom: 0;
+            left: 50%;
+            transform-origin: bottom center;
+            transform: rotate(-90deg);
+            transition: transform 1s ease-out;
+        }
+
+        .overlay-message {
+            position: absolute;
+            background: rgba(0,0,0,0.8);
+            color: white;
+            padding: 15px 30px;
+            border-radius: 30px;
+            font-size: 18px;
+            font-weight: bold;
+            opacity: 0;
+            transition: opacity 0.5s;
+            pointer-events: none;
+            z-index: 100;
+        }
+
+        .quiz-container {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: var(--bg-color);
+            z-index: 200;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 40px;
+        }
+
+        .quiz-option {
+            background: var(--card-bg);
+            padding: 15px 30px;
+            margin: 10px;
+            border-radius: var(--border-radius);
+            cursor: pointer;
+            width: 100%;
+            max-width: 400px;
+            text-align: center;
+            box-shadow: var(--shadow);
+            border: 2px solid transparent;
+        }
+
+        .quiz-option:hover {
+            border-color: var(--primary);
+        }
+
+        .legend {
+            margin-top: 20px;
+            font-size: 12px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        .dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+        }
+
+        #timeline-view {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            padding: 20px;
+            overflow-x: auto;
+        }
+        
+        .timeline-event {
+            min-width: 150px;
+            padding: 15px;
+            background: var(--card-bg);
+            border-radius: 8px;
+            margin-right: 20px;
+            position: relative;
+            box-shadow: var(--shadow);
+        }
+        
+        .timeline-event::after {
+            content: '';
+            position: absolute;
+            right: -20px;
+            top: 50%;
+            width: 20px;
+            height: 2px;
+            background: var(--primary);
+        }
+        
+        .timeline-event:last-child::after {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <div class="header-title">
+            <h1>💰 FOLLOW THE MONEY</h1>
+            <p>18 Patterns • Animated Examples • Beginner Friendly</p>
+        </div>
+        <div class="header-controls">
+            <button class="secondary-btn" id="theme-toggle">🌓 Theme</button>
+            <button class="secondary-btn" id="story-btn">🎬 Story Mode</button>
+            <button class="secondary-btn" id="quiz-btn">🧠 Quiz</button>
+            <button id="investigator-btn">🔍 Investigator Mode</button>
+        </div>
+    </header>
+
+    <main>
+        <div class="left-panel">
+            <div class="pattern-list" id="pattern-list">
+                <!-- Patterns injected by JS -->
+            </div>
+        </div>
+
+        <div class="center-panel">
+            <div class="animation-container" id="animation-container">
+                <svg class="svg-layer" id="svg-layer">
+                    <!-- SVG elements rendered by JS -->
+                </svg>
+                <div id="overlay-msg" class="overlay-message"></div>
+                <div id="timeline-container" class="hidden">
+                    <div id="timeline-view"></div>
+                </div>
+                <div style="position:absolute; bottom:15px; right:15px; display:flex; gap:5px; z-index:150;">
+                    <button class="secondary-btn" id="zoom-in-btn" style="padding: 5px 10px; font-size: 14px;" title="Zoom In">🔍 +</button>
+                    <button class="secondary-btn" id="zoom-out-btn" style="padding: 5px 10px; font-size: 14px;" title="Zoom Out">🔍 -</button>
+                    <button class="secondary-btn" id="zoom-reset-btn" style="padding: 5px 10px; font-size: 14px;" title="Reset View">Reset</button>
+                </div>
+            </div>
+            
+            <div class="controls">
+                <button class="secondary-btn" id="prev-btn">← Prev</button>
+                <button id="play-btn">▶ Play</button>
+                <button id="pause-btn">⏸ Pause</button>
+                <button class="secondary-btn" id="replay-btn">🔄 Replay</button>
+                <button class="secondary-btn" id="next-btn">Next →</button>
+                <label style="display:flex; align-items:center; gap:5px; margin-left:15px; cursor:pointer;">
+                    <input type="checkbox" id="autoplay-cb"> Auto Play
+                </label>
+            </div>
+        </div>
+
+        <div class="right-panel">
+            <div class="explanation-card">
+                <h2 id="exp-title">Select a Pattern</h2>
+                
+                <div class="explanation-section">
+                    <h3>What is it?</h3>
+                    <p id="exp-what">Choose a pattern from the left to learn how transaction monitoring works.</p>
+                </div>
+
+                <div class="explanation-section">
+                    <h3>Example</h3>
+                    <p id="exp-example">-</p>
+                </div>
+
+                <div class="explanation-section" style="border-left-color: var(--warning);">
+                    <h3>What changed?</h3>
+                    <p id="exp-changed">-</p>
+                </div>
+
+                <div class="explanation-section investigator-mode hidden" id="inv-section">
+                    <h3>🔍 Investigator Questions</h3>
+                    <p><strong>What happened?</strong> <span id="inv-happened"></span></p>
+                    <p><strong>What should we check?</strong> <span id="inv-check"></span></p>
+                </div>
+
+                <div class="explanation-section" style="border-left-color: var(--success); background: rgba(76, 201, 240, 0.1);">
+                    <h3>Remember</h3>
+                    <p>🚨 An unusual pattern is a signal to investigate, not proof of wrongdoing.</p>
+                </div>
+                
+                <div class="legend">
+                    <div class="legend-item"><div class="dot" style="background:#4cc9f0;"></div> Normal</div>
+                    <div class="legend-item"><div class="dot" style="background:#f8961e;"></div> Changed</div>
+                    <div class="legend-item"><div class="dot" style="background:#4361ee;"></div> Money</div>
+                    <div class="legend-item"><div class="dot" style="background:#f94144;"></div> Signal</div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <div id="quiz-overlay" class="quiz-container hidden">
+        <h2>🧠 Can You Spot the Pattern?</h2>
+        <div id="quiz-scenario" style="margin: 20px; padding: 20px; background: var(--bg-color); border-radius: 8px; max-width: 600px; text-align: left;">
+            <!-- Scenario injected here -->
+        </div>
+        <h3>What pattern do you notice?</h3>
+        <div id="quiz-options" style="display: flex; flex-direction: column; align-items: center; width: 100%;">
+            <!-- Options injected here -->
+        </div>
+        <button id="close-quiz-btn" style="margin-top: 20px;">Close Quiz</button>
+    </div>
+
+<script>
+// Data structure for 18 patterns
+const patterns = [
+    {
+        id: "velocity",
+        title: "Transaction Velocity",
+        icon: "⚡",
+        what: "How quickly are transactions happening?",
+        example: "An account normally receives 5 transactions a day. Suddenly it receives 50 in one hour.",
+        changed: "The account suddenly became much busier than usual.",
+        invHappened: "Transaction count spiked by 1000%.",
+        invCheck: "Look at the source of funds. Is there a new business line, a viral product, or a system error?",
+        renderScene: (svg, animateStep, showMsg) => {
+            createNode(svg, 'sender', 100, 200, '👤', 'Customer');
+            createNode(svg, 'receiver', 500, 200, '🏦', 'Account');
+            
+            setTimeout(() => { showMsg("Normal: 5 transactions/day"); animateMoney(svg, 'sender', 'receiver', 1, 2000); }, 500);
+            setTimeout(() => {
+                showMsg("Now: 50 transactions in a short time!");
+                document.getElementById('node-receiver').classList.add('pulsing');
+                for(let i=0; i<10; i++) {
+                    setTimeout(() => animateMoney(svg, 'sender', 'receiver', 1, 300), i*200);
+                }
+            }, 3000);
+        }
+    },
+    {
+        id: "passthrough",
+        title: "Rapid Pass-Through",
+        icon: "🏃💨",
+        what: "An account receives money and quickly sends most of it somewhere else.",
+        example: "Company A sends money to Account X, which forwards it to Company B within minutes.",
+        changed: "Money stayed in the account for only a few minutes.",
+        invHappened: "Funds entered and left almost immediately.",
+        invCheck: "Why is Account X in the middle? Is it a legitimate intermediary or just hiding the money's path?",
+        renderScene: (svg, animateStep, showMsg) => {
+            createNode(svg, 'compA', 100, 200, '🏢', 'Company A');
+            createNode(svg, 'accX', 300, 200, '🏦', 'Account X');
+            createNode(svg, 'compB', 500, 200, '🏢', 'Company B');
+            
+            setTimeout(() => { showMsg("Money arrived..."); animateMoney(svg, 'compA', 'accX', 3, 1000); }, 500);
+            setTimeout(() => { showMsg("...and quickly left."); animateMoney(svg, 'accX', 'compB', 3, 1000); }, 2000);
+            setTimeout(() => { showMsg("Money stayed for only 7 minutes."); document.getElementById('node-accX').classList.add('pulsing'); }, 3500);
+        }
+    },
+    {
+        id: "structuring",
+        title: "Structuring Pattern",
+        icon: "🧩",
+        what: "Instead of moving one large amount, money appears in several smaller transactions.",
+        example: "Instead of depositing 500,000 at once, a user deposits 95k, 90k, 98k, 92k, 97k.",
+        changed: "Multiple smaller amounts were used instead of one large one.",
+        invHappened: "Deposits seem deliberately sized just below reporting thresholds.",
+        invCheck: "Are these daily cash receipts from a business, or an attempt to avoid paperwork?",
+        renderScene: (svg, animateStep, showMsg) => {
+            createNode(svg, 'source', 100, 200, '👤', 'Depositor');
+            createNode(svg, 'bank', 500, 200, '🏦', 'Bank');
+            
+            showMsg("One large amount vs Many smaller");
+            let yOffsets = [-80, -40, 0, 40, 80];
+            let amounts = ['95k', '90k', '98k', '92k', '97k'];
+            
+            yOffsets.forEach((y, i) => {
+                setTimeout(() => {
+                    let m = document.createElementNS("http://www.w3.org/2000/svg", "text");
+                    m.textContent = '💰 ' + amounts[i];
+                    m.setAttribute("x", 100);
+                    m.setAttribute("y", 200);
+                    m.classList.add('money');
+                    svg.appendChild(m);
+                    
+                    m.style.setProperty('--startX', '0px');
+                    m.style.setProperty('--startY', '0px');
+                    m.style.setProperty('--endX', '400px');
+                    m.style.setProperty('--endY', y + 'px');
+                    m.style.animation = `moveMoney 1s forwards`;
+                }, i * 500 + 1000);
+            });
+        }
+    },
+    {
+        id: "dormant",
+        title: "Dormant Reactivation",
+        icon: "😴",
+        what: "An account that was mostly quiet suddenly becomes very active.",
+        example: "An account with no activity for 6 months suddenly receives millions.",
+        changed: "The activity level went from zero to massive overnight.",
+        invHappened: "A sleeping account woke up with large volumes.",
+        invCheck: "Did the customer start a new business? Or was the account sold/taken over?",
+        renderScene: (svg, animateStep, showMsg) => {
+            createNode(svg, 'bank', 300, 200, '🏦', 'Sleeping Account');
+            
+            setTimeout(() => { showMsg("6 months quiet..."); document.getElementById('node-bank').querySelector('text').textContent = '😴'; }, 500);
+            setTimeout(() => { 
+                showMsg("Suddenly: heavy activity!"); 
+                let b = document.getElementById('node-bank');
+                b.querySelector('text').textContent = '🏦';
+                b.classList.add('pulsing');
+                for(let i=0; i<5; i++) {
+                    setTimeout(() => {
+                        let m = document.createElementNS("http://www.w3.org/2000/svg", "text");
+                        m.textContent = '💰';
+                        m.setAttribute("x", 100);
+                        m.setAttribute("y", 200);
+                        m.style.setProperty('--startX', '0px');
+                        m.style.setProperty('--startY', (Math.random()*100-50)+'px');
+                        m.style.setProperty('--endX', '200px');
+                        m.style.setProperty('--endY', '0px');
+                        m.style.animation = `moveMoney 0.5s forwards`;
+                        svg.appendChild(m);
+                    }, i*200);
+                }
+            }, 2500);
+        }
+    },
+    {
+        id: "new_beneficiary",
+        title: "New Beneficiary",
+        icon: "🆕",
+        what: "A large transfer goes to someone the customer has never paid before.",
+        example: "Customer usually pays Suppliers A & B, but suddenly sends a huge amount to Unknown Account C.",
+        changed: "First time sending money here, and it's a large amount.",
+        invHappened: "Large payment to a new, previously unseen recipient.",
+        invCheck: "Is this a new legitimate supplier? Check the invoice and business relationship.",
+        renderScene: (svg, animateStep, showMsg) => {
+            createNode(svg, 'cust', 100, 200, '👤', 'Customer');
+            createNode(svg, 'supA', 400, 100, '🏢', 'Supplier A');
+            createNode(svg, 'supB', 400, 200, '🏢', 'Supplier B');
+            createNode(svg, 'newB', 400, 300, '❓', 'New Account');
+            
+            setTimeout(() => { showMsg("Normal payments..."); animateMoney(svg, 'cust', 'supA', 1, 1000); animateMoney(svg, 'cust', 'supB', 1, 1000); }, 500);
+            setTimeout(() => { showMsg("First time sending here (Large amount)"); document.getElementById('node-newB').classList.add('pulsing'); animateMoney(svg, 'cust', 'newB', 5, 1500); }, 2500);
+        }
+    },
+    {
+        id: "concentration",
+        title: "Beneficiary Concentration",
+        icon: "🎯",
+        what: "Most of the money leaving an account is going to one single recipient.",
+        example: "Customer has 5 suppliers, but 85% of all outgoing money goes to Supplier A.",
+        changed: "Activity is heavily concentrated rather than distributed.",
+        invHappened: "One recipient dominates outgoing funds.",
+        invCheck: "Is this their primary vendor, or are funds being aggregated in one place intentionally?",
+        renderScene: (svg, animateStep, showMsg) => {
+            createNode(svg, 'cust', 100, 200, '👤', 'Customer');
+            let targets = ['A', 'B', 'C', 'D', 'E'];
+            targets.forEach((t, i) => createNode(svg, 't'+t, 400, 50 + i*70, '🏢', 'Acc '+t));
+            
+            setTimeout(() => { 
+                showMsg("Small payments to B, C, D, E"); 
+                targets.slice(1).forEach(t => animateMoney(svg, 'cust', 't'+t, 1, 1000));
+            }, 500);
+            
+            setTimeout(() => { 
+                showMsg("85% of money -> Account A"); 
+                let nodeA = document.getElementById('node-tA');
+                nodeA.setAttribute('transform', 'translate(400, 50) scale(1.5)');
+                nodeA.style.setProperty('--scale', '1.5');
+                nodeA.classList.add('pulsing');
+                for(let i=0; i<5; i++) {
+                    setTimeout(() => animateMoney(svg, 'cust', 'tA', 2, 500), i*300);
+                }
+            }, 2000);
+        }
+    },
+    {
+        id: "recurring",
+        title: "Recurring Transfer",
+        icon: "🔄",
+        what: "The same type of transfer keeps happening in a recognizable pattern.",
+        example: "Every Friday at 4 PM, exactly ETB 50,000 is sent to the same account.",
+        changed: "The exact repetition suggests automated or scheduled behavior.",
+        invHappened: "Perfectly periodic identical transfers.",
+        invCheck: "Is this a normal salary/rent payment, or a coordinated distribution?",
+        renderScene: (svg, animateStep, showMsg) => {
+            createNode(svg, 'source', 100, 200, '🏦', 'Account A');
+            createNode(svg, 'target', 500, 200, '🏦', 'Account B');
+            
+            let weeks = ['Week 1', 'Week 2', 'Week 3', 'Week 4'];
+            weeks.forEach((w, i) => {
+                setTimeout(() => {
+                    showMsg(w + " - Same amount, same day");
+                    animateMoney(svg, 'source', 'target', 1, 800);
+                }, 1000 * i + 500);
+            });
+        }
+    },
+    {
+        id: "burst",
+        title: "Transaction Burst",
+        icon: "💥",
+        what: "Many transactions happened in a very short time.",
+        example: "10 identical transfers are sent within 2 minutes.",
+        changed: "The speed of transactions is mechanically fast.",
+        invHappened: "A sudden burst of activity in a narrow time window.",
+        invCheck: "Was a batch payment file processed, or is a script/bot moving funds?",
+        renderScene: (svg, animateStep, showMsg) => {
+            createNode(svg, 'source', 100, 200, '🏦', 'Source');
+            createNode(svg, 'target', 500, 200, '🏦', 'Target');
+            
+            setTimeout(() => { showMsg("Normal speed"); animateMoney(svg, 'source', 'target', 1, 1000); }, 500);
+            setTimeout(() => { showMsg("Normal speed"); animateMoney(svg, 'source', 'target', 1, 1000); }, 2000);
+            setTimeout(() => { 
+                showMsg("10 transactions in 2 minutes!"); 
+                document.getElementById('node-target').classList.add('pulsing');
+                for(let i=0; i<10; i++) {
+                    setTimeout(() => animateMoney(svg, 'source', 'target', 1, 200), i*100);
+                }
+            }, 3500);
+        }
+    },
+    {
+        id: "rounded",
+        title: "Rounded-Value Pattern",
+        icon: "🔢",
+        what: "Many transactions use perfectly round amounts.",
+        example: "Transactions are exactly 100,000, 250,000, 500,000 instead of 103,472.",
+        changed: "Lack of natural variance (cents, irregular amounts).",
+        invHappened: "Values are suspiciously perfect round numbers.",
+        invCheck: "Are these fixed contract payments/loans, or arbitrary numbers chosen by a person?",
+        renderScene: (svg, animateStep, showMsg) => {
+            let t1 = document.createElementNS("http://www.w3.org/2000/svg", "text");
+            t1.setAttribute("x", 100); t1.setAttribute("y", 100); t1.textContent = "Normal: 103,472 | 247,830"; t1.style.fill = "gray"; svg.appendChild(t1);
+            
+            let t2 = document.createElementNS("http://www.w3.org/2000/svg", "text");
+            t2.setAttribute("x", 100); t2.setAttribute("y", 200); t2.textContent = "Observed: 100,000 | 500,000 | 1,000,000"; t2.style.fill = "var(--danger)"; t2.style.fontSize = "24px"; svg.appendChild(t2);
+            
+            setTimeout(() => showMsg("Many transactions use perfectly round amounts."), 500);
+        }
+    },
+    {
+        id: "turnover",
+        title: "Balance Turnover",
+        icon: "🔄💰",
+        what: "A lot of money moves through the account compared with the amount normally kept there.",
+        example: "Account keeps a 50k balance, but 5M passes through it monthly.",
+        changed: "The flow volume is massive compared to the resting balance.",
+        invHappened: "High velocity of funds with low retention.",
+        invCheck: "Is this a pass-through operating account, or a transit node?",
+        renderScene: (svg, animateStep, showMsg) => {
+            createNode(svg, 'acc', 300, 200, '🏦', 'Balance: 50k');
+            
+            setTimeout(() => { showMsg("Inflow: 5,000,000"); animateMoney(svg, null, 'acc', 5, 1000, 50, 200); }, 500);
+            setTimeout(() => { document.getElementById('node-acc').querySelector('.node-label').textContent = 'Balance: 5,050,000'; }, 1500);
+            setTimeout(() => { showMsg("Outflow: 4,950,000"); animateMoney(svg, 'acc', null, 5, 1000, 550, 200); }, 2500);
+            setTimeout(() => { document.getElementById('node-acc').querySelector('.node-label').textContent = 'Balance: 100k'; }, 3500);
+        }
+    },
+    {
+        id: "merchant",
+        title: "Merchant Concentration",
+        icon: "🏪",
+        what: "Most of the customer's spending happens at one merchant.",
+        example: "90% of card spending happens at Shop A, ignoring fuel, food, etc.",
+        changed: "Lack of normal diverse spending behavior.",
+        invHappened: "Spending is hyper-focused on one entity.",
+        invCheck: "Are they buying inventory for a business, or cashing out via a complicit merchant?",
+        renderScene: (svg, animateStep, showMsg) => {
+            createNode(svg, 'cust', 100, 200, '💳', 'Customer');
+            createNode(svg, 'shopA', 400, 100, '🏪', 'Shop A');
+            createNode(svg, 'fuel', 400, 200, '⛽', 'Fuel');
+            createNode(svg, 'food', 400, 300, '🍔', 'Food');
+            
+            setTimeout(() => { 
+                showMsg("Shop A = 90% of spending"); 
+                document.getElementById('node-shopA').classList.add('pulsing');
+                for(let i=0; i<8; i++) animateMoney(svg, 'cust', 'shopA', 1, 500);
+                animateMoney(svg, 'cust', 'fuel', 1, 500);
+            }, 1000);
+        }
+    },
+    {
+        id: "unusual_hour",
+        title: "Unusual-Hour Transactions",
+        icon: "🌙",
+        what: "Transactions at times unusual for this specific customer.",
+        example: "Customer usually transacts 9 AM - 5 PM. Suddenly wires money at 2:13 AM.",
+        changed: "The timing is out of character for their historical baseline.",
+        invHappened: "Action occurred during local sleeping hours.",
+        invCheck: "Are they traveling (timezone change), or is someone else controlling the account remotely?",
+        renderScene: (svg, animateStep, showMsg) => {
+            let clock = document.createElementNS("http://www.w3.org/2000/svg", "text");
+            clock.setAttribute("x", 300); clock.setAttribute("y", 150); clock.textContent = "☀️ 09:00 AM"; clock.style.fontSize = "30px"; clock.style.textAnchor = "middle"; svg.appendChild(clock);
+            
+            setTimeout(() => { clock.textContent = "☀️ 12:00 PM"; }, 1000);
+            setTimeout(() => { clock.textContent = "☀️ 03:00 PM"; }, 2000);
+            setTimeout(() => { 
+                clock.textContent = "🌙 02:13 AM"; 
+                document.body.classList.add('dark-mode'); 
+                showMsg("Is this normal for this customer?");
+                createNode(svg, 'bank', 300, 250, '🏦', 'Transfer initiated');
+                document.getElementById('node-bank').classList.add('pulsing');
+            }, 3000);
+            
+            // Clean up dark mode on exit
+            setTimeout(() => document.body.classList.remove('dark-mode'), 6000);
+        }
+    },
+    {
+        id: "relationship",
+        title: "Account Relationship Strength",
+        icon: "🔗",
+        what: "Evaluating how historically strong the connection between accounts is.",
+        example: "Account A sends to Account B (245 past transfers) vs Account C (1 past transfer).",
+        changed: "A massive payment on a weak/new relationship line.",
+        invHappened: "Funds moved across an unestablished pathway.",
+        invCheck: "Verify the contract or invoice that justifies this new large relationship.",
+        renderScene: (svg, animateStep, showMsg) => {
+            createNode(svg, 'A', 100, 200, '🏦', 'Acc A');
+            createNode(svg, 'B', 400, 100, '🏦', 'Acc B (245 tx)');
+            createNode(svg, 'C', 400, 300, '🏦', 'Acc C (1 tx)');
+            
+            let line1 = document.createElementNS("http://www.w3.org/2000/svg", "line");
+            line1.setAttribute("x1", 100); line1.setAttribute("y1", 200); line1.setAttribute("x2", 400); line1.setAttribute("y2", 100); line1.style.stroke = "var(--primary)"; line1.style.strokeWidth = "10"; svg.appendChild(line1);
+            
+            let line2 = document.createElementNS("http://www.w3.org/2000/svg", "line");
+            line2.setAttribute("x1", 100); line2.setAttribute("y1", 200); line2.setAttribute("x2", 400); line2.setAttribute("y2", 300); line2.style.stroke = "var(--primary)"; line2.style.strokeWidth = "2"; svg.appendChild(line2);
+            
+            setTimeout(() => { showMsg("Strong vs Weak Relationship"); document.getElementById('node-C').classList.add('pulsing'); }, 1000);
+        }
+    },
+    {
+        id: "cash",
+        title: "Cash-In / Cash-Out",
+        icon: "💵",
+        what: "Cash repeatedly enters and leaves the account.",
+        example: "Cash deposited at ATM, then quickly withdrawn at another ATM.",
+        changed: "The physical cash nature of the flow.",
+        invHappened: "High volume of physical cash transit.",
+        invCheck: "Is it a cash-intensive business (restaurant), or structuring to move physical cash?",
+        renderScene: (svg, animateStep, showMsg) => {
+            createNode(svg, 'atmIn', 100, 200, '🏧', 'ATM In');
+            createNode(svg, 'acc', 300, 200, '🏦', 'Account');
+            createNode(svg, 'atmOut', 500, 200, '🏧', 'ATM Out');
+            
+            let loop = () => {
+                animateMoney(svg, 'atmIn', 'acc', 3, 1000);
+                setTimeout(() => animateMoney(svg, 'acc', 'atmOut', 3, 1000), 1200);
+            };
+            
+            setTimeout(() => { showMsg("Cash repeatedly enters and leaves."); loop(); }, 500);
+            setTimeout(loop, 3000);
+        }
+    },
+    {
+        id: "mismatch",
+        title: "Profile Mismatch",
+        icon: "🏢❓",
+        what: "The account activity looks very different from the customer's declared business profile.",
+        example: "A small grocery store sends 8 million to a construction company.",
+        changed: "Expected behavior ≠ Observed behavior.",
+        invHappened: "Activity deviates from Know Your Customer (KYC) profile.",
+        invCheck: "Did the business change its operations? Request updated business registry documents.",
+        renderScene: (svg, animateStep, showMsg) => {
+            createNode(svg, 'grocery', 100, 200, '🏪', 'Small Grocery');
+            createNode(svg, 'construct', 500, 200, '🏗️', 'Construction Co.');
+            
+            let expected = document.createElementNS("http://www.w3.org/2000/svg", "text");
+            expected.setAttribute("x", 100); expected.setAttribute("y", 100); expected.textContent = "Expected: Small local payments"; expected.style.fill = "gray"; svg.appendChild(expected);
+            
+            setTimeout(() => { 
+                showMsg("Actual: ETB 8,000,000 transfer!"); 
+                document.getElementById('node-grocery').classList.add('pulsing');
+                animateMoney(svg, 'grocery', 'construct', 10, 2000); 
+            }, 1500);
+        }
+    },
+    {
+        id: "smurfing",
+        title: "Multi-Tier Smurfing",
+        icon: "🏢➡️🏢",
+        what: "Money moves through several connected companies before reaching a destination.",
+        example: "Comp A -> Comp B -> Comp C -> Comp D -> Person.",
+        changed: "Unnecessary complexity in the payment chain.",
+        invHappened: "Funds traversed multiple layers before final settlement.",
+        invCheck: "Are these subsidiaries moving internal funds, or shell companies obscuring the source?",
+        renderScene: (svg, animateStep, showMsg) => {
+            let comps = ['A', 'B', 'C', 'D'];
+            comps.forEach((c, i) => createNode(svg, 'c'+c, 100 + i*120, 200, '🏢', 'Co. '+c));
+            createNode(svg, 'person', 580, 200, '👤', 'Person');
+            
+            setTimeout(() => { showMsg("Money moves through several layers..."); }, 500);
+            
+            for(let i=0; i<3; i++) {
+                setTimeout(() => animateMoney(svg, 'c'+comps[i], 'c'+comps[i+1], 2, 800), 500 + i*800);
+            }
+            setTimeout(() => animateMoney(svg, 'cD', 'person', 2, 800), 500 + 3*800);
+        }
+    },
+    {
+        id: "baseline",
+        title: "Behavioral Baseline",
+        icon: "📊",
+        what: "We compare the customer with their own normal behavior.",
+        example: "Normal is ~13 tx/day. Today is 80 tx.",
+        changed: "A massive deviation from their historical average.",
+        invHappened: "Current behavior breached historical statistical baseline.",
+        invCheck: "Look at the context. Did it happen on a holiday? Was there a specific life event?",
+        renderScene: (svg, animateStep, showMsg) => {
+            let chart = document.createElementNS("http://www.w3.org/2000/svg", "polyline");
+            chart.setAttribute("points", "50,250 100,240 150,245 200,230 250,240 300,50");
+            chart.style.fill = "none";
+            chart.style.stroke = "var(--primary)";
+            chart.style.strokeWidth = "4";
+            svg.appendChild(chart);
+            
+            setTimeout(() => { showMsg("Normal: ~13/day"); }, 500);
+            setTimeout(() => { 
+                showMsg("Today: 80! BIG CHANGE"); 
+                let dot = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+                dot.setAttribute("cx", 300); dot.setAttribute("cy", 50); dot.setAttribute("r", 10);
+                dot.style.fill = "var(--danger)";
+                dot.classList.add('pulsing');
+                svg.appendChild(dot);
+            }, 2000);
+        }
+    },
+    {
+        id: "manager",
+        title: "Manager-Corporate Flow",
+        icon: "👔🏢",
+        what: "Large flow between the company and the manager's personal account.",
+        example: "Company sends ETB 4M to Manager's personal account, who sends 3.8M elsewhere.",
+        changed: "Business funds mixing with personal accounts.",
+        invHappened: "Corporate funds diverted to personal executive account.",
+        invCheck: "Is it Salary/Dividend/Loan? Check documents. This does NOT automatically mean illegal.",
+        renderScene: (svg, animateStep, showMsg) => {
+            createNode(svg, 'comp', 100, 200, '🏢', 'Company');
+            createNode(svg, 'mgr', 300, 200, '👔', 'Manager (Personal)');
+            createNode(svg, 'other', 500, 200, '🏢', 'Other Co.');
+            
+            setTimeout(() => { showMsg("4M to personal account"); animateMoney(svg, 'comp', 'mgr', 4, 1000); }, 500);
+            setTimeout(() => { 
+                showMsg("3.8M sent elsewhere"); 
+                document.getElementById('node-mgr').classList.add('pulsing');
+                animateMoney(svg, 'mgr', 'other', 3, 1000); 
+            }, 2000);
+        }
+    }
+];
+
+let currentPatternIndex = 0;
+let isInvestigatorMode = false;
+let autoPlay = false;
+let animationTimeout;
+
+let currentScale = 1;
+let currentPanX = 0;
+let currentPanY = 0;
+let isPanning = false;
+let startPanX = 0;
+let startPanY = 0;
+
+function updateView() {
+    const svgLayer = document.getElementById('svg-layer');
+    if (svgLayer) svgLayer.style.transform = `translate(${currentPanX}px, ${currentPanY}px) scale(${currentScale})`;
+}
+
+function resetView() {
+    currentScale = 1;
+    currentPanX = 0;
+    currentPanY = 0;
+    updateView();
+}
+
+// Initialization
+function init() {
+    const list = document.getElementById('pattern-list');
+    patterns.forEach((p, idx) => {
+        const card = document.createElement('div');
+        card.className = 'pattern-card';
+        card.innerHTML = `<div class="pattern-icon">${p.icon}</div><div class="pattern-title">${p.title}</div>`;
+        card.onclick = () => loadPattern(idx);
+        list.appendChild(card);
+    });
+    
+    // Event listeners
+    document.getElementById('theme-toggle').onclick = () => document.body.classList.toggle('dark-mode');
+    document.getElementById('investigator-btn').onclick = toggleInvestigatorMode;
+    document.getElementById('prev-btn').onclick = () => { currentPatternIndex = (currentPatternIndex - 1 + patterns.length) % patterns.length; loadPattern(currentPatternIndex); };
+    document.getElementById('next-btn').onclick = () => { currentPatternIndex = (currentPatternIndex + 1) % patterns.length; loadPattern(currentPatternIndex); };
+    document.getElementById('replay-btn').onclick = () => loadPattern(currentPatternIndex);
+    
+    document.getElementById('quiz-btn').onclick = () => {
+        document.getElementById('quiz-overlay').classList.remove('hidden');
+        generateQuiz();
+    };
+    document.getElementById('close-quiz-btn').onclick = () => document.getElementById('quiz-overlay').classList.add('hidden');
+    
+    document.getElementById('autoplay-cb').onchange = (e) => { autoPlay = e.target.checked; };
+    
+    // Zoom and Pan Handlers
+    const animContainer = document.getElementById('animation-container');
+    animContainer.addEventListener('wheel', (e) => {
+        e.preventDefault();
+        const zoomSensitivity = 0.1;
+        if (e.deltaY < 0) {
+            currentScale = Math.min(5, currentScale + zoomSensitivity);
+        } else {
+            currentScale = Math.max(0.2, currentScale - zoomSensitivity);
+        }
+        updateView();
+    });
+
+    animContainer.addEventListener('mousedown', (e) => {
+        isPanning = true;
+        startPanX = e.clientX - currentPanX;
+        startPanY = e.clientY - currentPanY;
+        animContainer.style.cursor = 'grabbing';
+    });
+
+    animContainer.addEventListener('mousemove', (e) => {
+        if (!isPanning) return;
+        currentPanX = e.clientX - startPanX;
+        currentPanY = e.clientY - startPanY;
+        updateView();
+    });
+
+    animContainer.addEventListener('mouseup', () => {
+        isPanning = false;
+        animContainer.style.cursor = 'default';
+    });
+
+    animContainer.addEventListener('mouseleave', () => {
+        isPanning = false;
+        animContainer.style.cursor = 'default';
+    });
+    
+    document.getElementById('zoom-in-btn').onclick = () => { currentScale = Math.min(5, currentScale + 0.2); updateView(); };
+    document.getElementById('zoom-out-btn').onclick = () => { currentScale = Math.max(0.2, currentScale - 0.2); updateView(); };
+    document.getElementById('zoom-reset-btn').onclick = resetView;
+    document.getElementById('zoom-in-btn').parentElement.addEventListener('mousedown', e => e.stopPropagation());
+
+    loadPattern(0);
+}
+
+function loadPattern(index) {
+    currentPatternIndex = index;
+    const p = patterns[index];
+    
+    resetView();
+    
+    // Update active class in list
+    document.querySelectorAll('.pattern-card').forEach((c, i) => {
+        c.classList.toggle('active', i === index);
+    });
+    
+    // Update text
+    document.getElementById('exp-title').textContent = p.icon + " " + p.title;
+    document.getElementById('exp-what').textContent = p.what;
+    document.getElementById('exp-example').textContent = p.example;
+    document.getElementById('exp-changed').textContent = p.changed;
+    document.getElementById('inv-happened').textContent = p.invHappened;
+    document.getElementById('inv-check').textContent = p.invCheck;
+    
+    // Clear animation container
+    const svg = document.getElementById('svg-layer');
+    svg.innerHTML = '';
+    document.getElementById('overlay-msg').style.opacity = 0;
+    
+    // Clear timeouts
+    let highestTimeoutId = setTimeout(";");
+    for (let i = 0 ; i < highestTimeoutId ; i++) {
+        clearTimeout(i); 
+    }
+    
+    // Run animation
+    p.renderScene(svg, null, showOverlayMessage);
+    
+    if(autoPlay) {
+        setTimeout(() => {
+            document.getElementById('next-btn').click();
+        }, 8000);
+    }
+}
+
+function toggleInvestigatorMode() {
+    isInvestigatorMode = !isInvestigatorMode;
+    const invBtn = document.getElementById('investigator-btn');
+    const invSection = document.getElementById('inv-section');
+    
+    if(isInvestigatorMode) {
+        invBtn.style.background = 'var(--warning)';
+        invBtn.style.color = '#000';
+        invSection.classList.remove('hidden');
+    } else {
+        invBtn.style.background = 'var(--primary)';
+        invBtn.style.color = 'white';
+        invSection.classList.add('hidden');
+    }
+}
+
+// SVG Helper Functions
+function createNode(svg, id, x, y, icon, label) {
+    const g = document.createElementNS("http://www.w3.org/2000/svg", "g");
+    g.setAttribute("class", "node");
+    g.setAttribute("id", "node-" + id);
+    g.style.setProperty("--tx", x + "px");
+    g.style.setProperty("--ty", y + "px");
+    g.setAttribute("transform", `translate(${x}, ${y})`);
+    
+    const circle = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+    circle.setAttribute("r", "30");
+    
+    const text = document.createElementNS("http://www.w3.org/2000/svg", "text");
+    text.textContent = icon;
+    
+    const labelText = document.createElementNS("http://www.w3.org/2000/svg", "text");
+    labelText.setAttribute("class", "node-label");
+    labelText.setAttribute("y", "45");
+    labelText.textContent = label;
+    
+    g.appendChild(circle);
+    g.appendChild(text);
+    g.appendChild(labelText);
+    svg.appendChild(g);
+    return g;
+}
+
+function animateMoney(svg, fromId, toId, amount=1, duration=1000, fromX, fromY, toX, toY) {
+    let sx, sy, ex, ey;
+    
+    if(fromId) {
+        let n1 = document.getElementById('node-'+fromId).getAttribute('transform');
+        let m1 = n1.match(/translate\(([^,]+),\s*([^)]+)\)/);
+        sx = parseFloat(m1[1]); sy = parseFloat(m1[2]);
+    } else {
+        sx = fromX; sy = fromY;
+    }
+    
+    if(toId) {
+        let n2 = document.getElementById('node-'+toId).getAttribute('transform');
+        let m2 = n2.match(/translate\(([^,]+),\s*([^)]+)\)/);
+        ex = parseFloat(m2[1]); ey = parseFloat(m2[2]);
+    } else {
+        ex = toX; ey = toY;
+    }
+
+    let m = document.createElementNS("http://www.w3.org/2000/svg", "text");
+    m.textContent = amount > 1 ? '💰'.repeat(Math.min(amount, 3)) : '💰';
+    m.setAttribute("x", 0);
+    m.setAttribute("y", 0);
+    m.classList.add('money');
+    svg.appendChild(m);
+    
+    m.style.setProperty('--startX', sx+'px');
+    m.style.setProperty('--startY', sy+'px');
+    m.style.setProperty('--endX', ex+'px');
+    m.style.setProperty('--endY', ey+'px');
+    m.style.animation = `moveMoney ${duration/1000}s forwards`;
+    
+    setTimeout(() => { if(svg.contains(m)) svg.removeChild(m); }, duration + 100);
+}
+
+function showOverlayMessage(msg) {
+    const el = document.getElementById('overlay-msg');
+    el.textContent = msg;
+    el.style.opacity = 1;
+    setTimeout(() => el.style.opacity = 0, 2000);
+}
+
+function generateQuiz() {
+    const qScenario = document.getElementById('quiz-scenario');
+    const qOpts = document.getElementById('quiz-options');
+    qOpts.innerHTML = '';
+    
+    // Pick a random pattern
+    const correctIdx = Math.floor(Math.random() * patterns.length);
+    const correctP = patterns[correctIdx];
+    
+    qScenario.innerHTML = `<strong>Scenario:</strong><br>${correctP.example}`;
+    
+    // Generate 3 wrong options + 1 correct
+    let opts = [correctIdx];
+    while(opts.length < 4) {
+        let r = Math.floor(Math.random() * patterns.length);
+        if(!opts.includes(r)) opts.push(r);
+    }
+    opts.sort(() => Math.random() - 0.5); // Shuffle
+    
+    opts.forEach(idx => {
+        let btn = document.createElement('button');
+        btn.className = 'quiz-option secondary-btn';
+        btn.textContent = patterns[idx].icon + " " + patterns[idx].title;
+        btn.onclick = () => {
+            if(idx === correctIdx) {
+                btn.style.background = 'var(--success)';
+                btn.style.color = 'white';
+                setTimeout(() => {
+                    alert("Correct! " + correctP.what);
+                    document.getElementById('quiz-overlay').classList.add('hidden');
+                }, 1000);
+            } else {
+                btn.style.background = 'var(--danger)';
+                btn.style.color = 'white';
+                setTimeout(() => { btn.style.background = 'var(--card-bg)'; btn.style.color = 'var(--text-color)'; }, 1000);
+            }
+        };
+        qOpts.appendChild(btn);
+    });
+}
+
+// Start
+init();
+
+</script>
+</body>
+</html>

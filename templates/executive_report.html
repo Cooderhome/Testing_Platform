@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>{{ report.title }} - Executive Report</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 40px; color: #333; line-height: 1.6; }
+        .header { border-bottom: 2px solid #0056b3; padding-bottom: 20px; margin-bottom: 30px; }
+        .title { font-size: 28px; color: #0056b3; margin: 0; }
+        .meta { color: #666; font-size: 14px; margin-top: 10px; }
+        h2 { color: #0056b3; margin-top: 40px; border-bottom: 1px solid #eee; padding-bottom: 5px; }
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        th, td { padding: 12px; text-align: left; border-bottom: 1px solid #ddd; }
+        th { background-color: #f8f9fa; }
+        .critical { color: #dc3545; font-weight: bold; }
+        .high { color: #fd7e14; font-weight: bold; }
+        .medium { color: #ffc107; font-weight: bold; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1 class="title">{{ report.title }}</h1>
+        <div class="meta">
+            <strong>Project:</strong> {{ report.project.name }}<br>
+            <strong>Prepared By:</strong> {{ report.prepared_by.get_full_name|default:report.prepared_by.username }}<br>
+            <strong>Date:</strong> {{ report.created_at|date:"F d, Y" }}<br>
+            <strong>Confidentiality:</strong> {{ report.confidentiality_label }}
+        </div>
+    </div>
+
+    <h2>Executive Summary</h2>
+    <p>A review of the <strong>{{ report.project.name }}</strong> application was conducted. This report outlines the high-level findings and risk assessment.</p>
+    
+    <h2>Findings Summary</h2>
+    <table>
+        <tr>
+            <th>Severity</th>
+            <th>Count</th>
+        </tr>
+        <tr><td class="critical">CRITICAL</td><td>{{ stats.critical }}</td></tr>
+        <tr><td class="high">HIGH</td><td>{{ stats.high }}</td></tr>
+        <tr><td class="medium">MEDIUM</td><td>{{ stats.medium }}</td></tr>
+        <tr><td>TOTAL OPEN</td><td>{{ stats.total }}</td></tr>
+    </table>
+
+    <h2>Major Recommendations</h2>
+    <ul>
+        <li>Prioritize fixing Critical and High severity issues.</li>
+        <li>Review usability findings to improve end-user experience.</li>
+    </ul>
+</body>
+</html>

@@ -1,0 +1,159 @@
+{% extends 'base.html' %}
+
+{% block title %}Finding {{ finding.id }} - AppCritic{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2 class="h3 mb-0 text-gray-800">
+        <span class="text-muted">#{{ finding.id }}</span> {{ finding.title|default:"Untitled Finding" }}
+    </h2>
+    <div>
+        <span class="badge bg-primary">{{ finding.get_category_display }}</span>
+        <span class="badge bg-warning text-dark">{{ finding.get_severity_display }}</span>
+        <span class="badge bg-secondary">{{ finding.get_status_display }}</span>
+    </div>
+</div>
+
+<div class="row">
+    <!-- Main Content Column -->
+    <div class="col-lg-8">
+        <!-- Details Card -->
+        <div class="card mb-4">
+            <div class="card-header bg-white font-weight-bold text-primary py-3">Observation</div>
+            <div class="card-body">
+                <p>{{ finding.description }}</p>
+                
+                {% if finding.expected_behavior %}
+                <h6 class="font-weight-bold mt-4">Expected Behavior</h6>
+                <p>{{ finding.expected_behavior }}</p>
+                {% endif %}
+                
+                {% if finding.actual_behavior %}
+                <h6 class="font-weight-bold mt-4">Actual Behavior</h6>
+                <p>{{ finding.actual_behavior }}</p>
+                {% endif %}
+                
+                {% if finding.recommendation %}
+                <h6 class="font-weight-bold mt-4">Recommendation</h6>
+                <p>{{ finding.recommendation }}</p>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Evidence Card -->
+        <div class="card mb-4">
+            <div class="card-header bg-white font-weight-bold text-primary py-3">Evidence</div>
+            <div class="card-body">
+                <div class="row">
+                    {% for ev in finding.evidence.all %}
+                        <div class="col-md-6 mb-3">
+                            <div class="border rounded p-2 text-center">
+                                {% if ev.evidence_type == 'SCREENSHOT' %}
+                                    <img src="{{ ev.file.url }}" class="img-fluid rounded" alt="Screenshot">
+                                {% else %}
+                                    <a href="{{ ev.file.url }}" target="_blank"><i class="bi bi-file-earmark fs-1"></i><br>View File</a>
+                                {% endif %}
+                            </div>
+                        </div>
+                    {% empty %}
+                        <p class="text-muted">No evidence attached.</p>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Comments & Activity -->
+        <div class="card mb-4">
+            <div class="card-header bg-white font-weight-bold text-primary py-3">Activity & Comments</div>
+            <div class="card-body">
+                <!-- Activity Timeline (simplified) -->
+                <ul class="list-unstyled">
+                    {% for history in finding.status_history.all %}
+                    <li class="mb-3 border-bottom pb-2">
+                        <small class="text-muted">{{ history.timestamp|date:"M d, Y H:i" }}</small><br>
+                        <strong>{{ history.changed_by.username }}</strong> changed status from <em>{{ history.old_status }}</em> to <em>{{ history.new_status }}</em>.
+                        {% if history.comment %}<br><span class="text-muted">"{{ history.comment }}"</span>{% endif %}
+                    </li>
+                    {% endfor %}
+                    
+                    {% for comment in finding.comments.all %}
+                    <li class="mb-3 border-bottom pb-2">
+                        <small class="text-muted">{{ comment.created_at|date:"M d, Y H:i" }}</small><br>
+                        <strong>{{ comment.user.username }}</strong> commented:<br>
+                        <p class="mb-0 mt-1">{{ comment.text }}</p>
+                    </li>
+                    {% endfor %}
+                </ul>
+
+                <!-- Add Comment Form -->
+                <form method="POST" action="{% url 'add_comment' finding.id %}" class="mt-4">
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        <label for="commentText" class="form-label">Add a Comment</label>
+                        <textarea class="form-control" id="commentText" name="text" rows="3" required></textarea>
+                    </div>
+                    <button type="submit" class="btn btn-primary btn-sm">Post Comment</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Sidebar Column -->
+    <div class="col-lg-4">
+        <!-- Location Card -->
+        <div class="card mb-4">
+            <div class="card-header bg-white font-weight-bold text-primary py-3">Location</div>
+            <div class="card-body">
+                <dl class="row mb-0">
+                    <dt class="col-sm-4 text-muted">Project</dt>
+                    <dd class="col-sm-8">{{ finding.project.name }}</dd>
+                    
+                    <dt class="col-sm-4 text-muted">Module</dt>
+                    <dd class="col-sm-8">{{ finding.module.name|default:"-" }}</dd>
+                    
+                    <dt class="col-sm-4 text-muted">URL</dt>
+                    <dd class="col-sm-8"><a href="{{ finding.page_url }}" target="_blank">Link</a></dd>
+                    
+                    <dt class="col-sm-4 text-muted">Element</dt>
+                    <dd class="col-sm-8"><code>{{ finding.element_selector|default:"-" }}</code></dd>
+                </dl>
+            </div>
+        </div>
+
+        <!-- Workflow Card -->
+        <div class="card mb-4">
+            <div class="card-header bg-white font-weight-bold text-primary py-3">Workflow</div>
+            <div class="card-body">
+                <form method="POST" action="{% url 'update_status' finding.id %}">
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        <label class="form-label text-muted">Assigned To</label>
+                        <select name="assigned_to" class="form-select form-select-sm">
+                            <option value="">-- Unassigned --</option>
+                            {% for u in users %}
+                            <option value="{{ u.id }}" {% if finding.assigned_to_id == u.id %}selected{% endif %}>{{ u.username }} ({{ u.get_role_display }})</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label text-muted">Status</label>
+                        <select name="status" class="form-select form-select-sm">
+                            {% for val, display in finding.STATUS_CHOICES %}
+                            <option value="{{ val }}" {% if finding.status == val %}selected{% endif %}>{{ display }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label text-muted">Transition Comment (Optional)</label>
+                        <input type="text" name="comment" class="form-control form-control-sm" placeholder="Reason for change">
+                    </div>
+                    
+                    <button type="submit" class="btn btn-success btn-sm w-100">Update Workflow</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

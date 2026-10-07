@@ -1,0 +1,31 @@
+{% extends 'base.html' %}
+{% block title %}Test Cases - AppCritic{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2 class="h3 mb-0 text-gray-800">Test Cases</h2>
+    <button class="btn btn-primary shadow-sm"><i class="bi bi-file-earmark-plus me-1"></i> New Test Case</button>
+</div>
+<div class="card shadow-sm">
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle">
+                <thead class="table-light">
+                    <tr><th>Title</th><th>Module</th><th>Priority</th><th>Status</th></tr>
+                </thead>
+                <tbody>
+                    {% for tc in test_cases %}
+                    <tr>
+                        <td><strong>{{ tc.title }}</strong></td>
+                        <td>{{ tc.module.name|default:"-" }}</td>
+                        <td>{{ tc.get_priority_display }}</td>
+                        <td>{{ tc.get_status_display }}</td>
+                    </tr>
+                    {% empty %}
+                    <tr><td colspan="4" class="text-center py-4 text-muted">No test cases found.</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

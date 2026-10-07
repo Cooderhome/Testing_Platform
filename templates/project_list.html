@@ -1,0 +1,94 @@
+{% extends 'base.html' %}
+{% block title %}Projects - AppCritic{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2 class="h3 mb-0 text-gray-800">Projects Directory</h2>
+    <button class="btn btn-primary shadow-sm" data-bs-toggle="modal" data-bs-target="#createProjectModal"><i class="bi bi-plus-circle me-1"></i> New Project</button>
+</div>
+<div class="card shadow-sm">
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle">
+                <thead class="table-light">
+                    <tr><th>Name</th><th>Target URL</th><th>Environment</th><th>Status</th><th class="text-end">Actions</th></tr>
+                </thead>
+                <tbody>
+                    {% for project in projects %}
+                    <tr>
+                        <td><strong>{{ project.name }}</strong></td>
+                        <td><a href="{{ project.target_url }}" target="_blank" class="text-decoration-none">{{ project.target_url }}</a></td>
+                        <td><span class="badge bg-secondary">{{ project.environment }}</span></td>
+                        <td><span class="badge bg-success">{{ project.status }}</span></td>
+                        <td class="text-end">
+                            <button class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#editProjectModal{{ project.id }}">Edit</button>
+                            <button class="btn btn-sm btn-outline-danger ms-1" data-bs-toggle="modal" data-bs-target="#deleteProjectModal{{ project.id }}">Delete</button>
+                        </td>
+                    </tr>
+
+                    <!-- Edit Modal -->
+                    <div class="modal fade" id="editProjectModal{{ project.id }}" tabindex="-1">
+                        <div class="modal-dialog">
+                            <div class="modal-content text-start">
+                                <form method="POST" action="{% url 'update_project' project.id %}">
+                                    {% csrf_token %}
+                                    <div class="modal-header">
+                                        <h5 class="modal-title">Edit Project</h5>
+                                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                    </div>
+                                    <div class="modal-body">
+                                        <div class="mb-3">
+                                            <label class="form-label">Project Name</label>
+                                            <input type="text" name="name" class="form-control" value="{{ project.name }}" required>
+                                        </div>
+                                        <div class="mb-3">
+                                            <label class="form-label">Target URL</label>
+                                            <input type="url" name="target_url" class="form-control" value="{{ project.target_url }}" required>
+                                        </div>
+                                        <div class="mb-3">
+                                            <label class="form-label">Environment</label>
+                                            <select name="environment" class="form-select">
+                                                <option value="Production" {% if project.environment == 'Production' %}selected{% endif %}>Production</option>
+                                                <option value="Staging" {% if project.environment == 'Staging' %}selected{% endif %}>Staging</option>
+                                                <option value="Development" {% if project.environment == 'Development' %}selected{% endif %}>Development</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                    <div class="modal-footer">
+                                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                                        <button type="submit" class="btn btn-primary">Save Changes</button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Delete Modal -->
+                    <div class="modal fade" id="deleteProjectModal{{ project.id }}" tabindex="-1">
+                        <div class="modal-dialog">
+                            <div class="modal-content text-start">
+                                <form method="POST" action="{% url 'delete_project' project.id %}">
+                                    {% csrf_token %}
+                                    <div class="modal-header border-danger">
+                                        <h5 class="modal-title text-danger">Confirm Delete</h5>
+                                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                    </div>
+                                    <div class="modal-body">
+                                        Are you sure you want to delete <strong>{{ project.name }}</strong>? This action cannot be undone.
+                                    </div>
+                                    <div class="modal-footer">
+                                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                                        <button type="submit" class="btn btn-danger">Delete Project</button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                    {% empty %}
+                    <tr><td colspan="5" class="text-center py-4 text-muted">No projects found.</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

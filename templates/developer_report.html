@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>{{ report.title }} - Developer Report</title>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 40px; color: #333; }
+        h1 { color: #2c3e50; border-bottom: 2px solid #34495e; padding-bottom: 10px; }
+        .finding { border: 1px solid #bdc3c7; border-radius: 5px; padding: 20px; margin-bottom: 30px; background: #f9f9f9; }
+        .finding h3 { margin-top: 0; color: #e74c3c; }
+        .meta-table { width: 100%; border-collapse: collapse; margin-bottom: 15px; }
+        .meta-table th, .meta-table td { padding: 8px; border: 1px solid #ddd; font-size: 14px; text-align: left; }
+        .meta-table th { background: #ecf0f1; width: 20%; }
+        .screenshot { max-width: 100%; border: 1px solid #ccc; margin-top: 15px; }
+        pre { background: #eee; padding: 10px; border-radius: 4px; overflow-x: auto; }
+    </style>
+</head>
+<body>
+    <h1>{{ report.title }} (Technical Details)</h1>
+    <p><strong>Project:</strong> {{ report.project.name }} | <strong>Date:</strong> {{ report.created_at|date:"Y-m-d" }}</p>
+    
+    {% for finding in findings %}
+    <div class="finding">
+        <h3>#{{ finding.id }}: {{ finding.title|default:"Untitled" }}</h3>
+        
+        <table class="meta-table">
+            <tr><th>Status / Severity</th><td>{{ finding.status }} / {{ finding.severity }}</td></tr>
+            <tr><th>Category / Module</th><td>{{ finding.category }} / {{ finding.module.name|default:"-" }}</td></tr>
+            <tr><th>URL</th><td><a href="{{ finding.page_url }}">{{ finding.page_url }}</a></td></tr>
+            <tr><th>DOM Selector</th><td><code>{{ finding.element_selector|default:"-" }}</code></td></tr>
+            <tr><th>Reporter</th><td>{{ finding.reporter.username }}</td></tr>
+        </table>
+
+        <h4>Description</h4>
+        <p>{{ finding.description }}</p>
+        
+        {% if finding.expected_behavior %}
+        <h4>Expected Behavior</h4>
+        <p>{{ finding.expected_behavior }}</p>
+        {% endif %}
+        
+        {% if finding.evidence.exists %}
+        <h4>Evidence</h4>
+        {% for ev in finding.evidence.all %}
+            {% if ev.evidence_type == 'SCREENSHOT' %}
+                <img src="{{ request.scheme }}://{{ request.get_host }}{{ ev.file.url }}" class="screenshot" alt="Screenshot">
+            {% endif %}
+        {% endfor %}
+        {% endif %}
+    </div>
+    {% empty %}
+    <p>No active findings for this project.</p>
+    {% endfor %}
+</body>
+</html>

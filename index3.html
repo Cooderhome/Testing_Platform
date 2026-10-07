@@ -1,0 +1,1571 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Data Fusion Platform – Interactive Architecture & Data Flow Simulator</title>
+    <style>
+        :root {
+            --bg-color: #0b1121;
+            --panel-bg: rgba(20, 30, 50, 0.7);
+            --panel-border: rgba(60, 100, 150, 0.4);
+            --text-main: #e2e8f0;
+            --text-muted: #94a3b8;
+            --cyan: #06b6d4;
+            --blue: #3b82f6;
+            --purple: #8b5cf6;
+            --green: #10b981;
+            --red: #ef4444;
+            --orange: #f59e0b;
+            --font-family: 'Inter', system-ui, sans-serif;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: var(--font-family);
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+        }
+
+        /* Glassmorphism utility */
+        .glass {
+            background: var(--panel-bg);
+            backdrop-filter: blur(10px);
+            border: 1px solid var(--panel-border);
+            border-radius: 8px;
+        }
+
+        /* Header */
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px 25px;
+            background: rgba(11, 17, 33, 0.9);
+            border-bottom: 1px solid var(--panel-border);
+            z-index: 100;
+        }
+
+        .header-title h1 {
+            font-size: 20px;
+            letter-spacing: 2px;
+            color: var(--cyan);
+            margin-bottom: 2px;
+        }
+
+        .header-title p {
+            font-size: 12px;
+            color: var(--text-muted);
+        }
+
+        .system-stats {
+            display: flex;
+            gap: 20px;
+            font-size: 12px;
+        }
+
+        .stat-item {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .stat-value {
+            font-weight: bold;
+            font-size: 14px;
+            color: var(--cyan);
+        }
+        
+        .stat-value.healthy { color: var(--green); }
+        .stat-value.warning { color: var(--orange); }
+        .stat-value.danger { color: var(--red); }
+
+        .header-controls {
+            display: flex;
+            gap: 10px;
+        }
+
+        button {
+            background: rgba(59, 130, 246, 0.2);
+            border: 1px solid rgba(59, 130, 246, 0.5);
+            color: white;
+            padding: 6px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+            transition: all 0.2s;
+        }
+
+        button:hover {
+            background: rgba(59, 130, 246, 0.4);
+        }
+        
+        button.active {
+            background: var(--blue);
+        }
+
+        /* Main Layout */
+        .main-container {
+            display: flex;
+            flex: 1;
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* Toolbar */
+        .toolbar {
+            width: 60px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            padding: 10px 0;
+            align-items: center;
+            border-right: 1px solid var(--panel-border);
+            z-index: 10;
+        }
+
+        .tool-btn {
+            width: 40px;
+            height: 40px;
+            border-radius: 8px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 18px;
+            background: transparent;
+            border: 1px solid transparent;
+        }
+        
+        .tool-btn:hover, .tool-btn.active {
+            background: rgba(255, 255, 255, 0.1);
+            border-color: var(--panel-border);
+        }
+
+        /* Canvas */
+        .canvas-container {
+            flex: 1;
+            position: relative;
+            overflow: hidden;
+        }
+
+        #architecture-canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 1;
+        }
+
+        #nodes-layer {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 2;
+            transform-origin: 0 0;
+        }
+
+        /* Nodes */
+        .node {
+            position: absolute;
+            width: 200px;
+            background: rgba(15, 23, 42, 0.85);
+            border: 1px solid var(--panel-border);
+            border-radius: 8px;
+            padding: 15px;
+            cursor: grab;
+            user-select: none;
+            transition: box-shadow 0.2s, border-color 0.2s;
+            backdrop-filter: blur(5px);
+        }
+        
+        .node:active {
+            cursor: grabbing;
+        }
+
+        .node:hover {
+            box-shadow: 0 0 15px rgba(6, 182, 212, 0.3);
+            border-color: var(--cyan);
+        }
+        
+        .node.selected {
+            border-color: var(--orange);
+            box-shadow: 0 0 20px rgba(245, 158, 11, 0.4);
+        }
+
+        .node-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+            padding-bottom: 5px;
+        }
+        
+        .node-title {
+            font-weight: 600;
+            font-size: 14px;
+        }
+        
+        .node-status {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--green);
+        }
+        
+        .node.warning .node-status { background: var(--orange); }
+        .node.error .node-status { background: var(--red); }
+        
+        .node-content {
+            font-size: 12px;
+            color: var(--text-muted);
+        }
+
+        /* Special Node Styles */
+        .node[data-type="source"] { border-top: 3px solid var(--cyan); }
+        .node[data-type="processor"] { border-top: 3px solid var(--blue); width: 220px; }
+        .node[data-type="database"] { border-top: 3px solid var(--purple); width: 220px; }
+        .node[data-type="broker"] { border-top: 3px solid var(--orange); }
+        .node[data-type="analytics"] { border-top: 3px solid var(--red); }
+        .node[data-type="graph"] { border-top: 3px solid var(--green); width: 250px; }
+
+        /* Connections */
+        .connection-line {
+            fill: none;
+            stroke: rgba(148, 163, 184, 0.3);
+            stroke-width: 2;
+            transition: stroke 0.3s;
+        }
+        
+        .connection-line.active {
+            stroke: var(--cyan);
+        }
+        
+        .connection-line.warning {
+            stroke: var(--orange);
+        }
+
+        /* Particles */
+        .particle {
+            fill: var(--cyan);
+            filter: drop-shadow(0 0 4px var(--cyan));
+        }
+
+        /* Right Panel */
+        .right-panel {
+            width: 320px;
+            background: rgba(11, 17, 33, 0.95);
+            border-left: 1px solid var(--panel-border);
+            display: flex;
+            flex-direction: column;
+            z-index: 10;
+        }
+
+        .panel-header {
+            padding: 15px;
+            border-bottom: 1px solid var(--panel-border);
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .panel-tabs {
+            display: flex;
+            border-bottom: 1px solid var(--panel-border);
+        }
+        
+        .panel-tab {
+            flex: 1;
+            padding: 10px 0;
+            text-align: center;
+            font-size: 12px;
+            cursor: pointer;
+            background: transparent;
+            border: none;
+            color: var(--text-muted);
+        }
+        
+        .panel-tab.active {
+            color: var(--cyan);
+            border-bottom: 2px solid var(--cyan);
+        }
+
+        .panel-content {
+            padding: 15px;
+            overflow-y: auto;
+            flex: 1;
+        }
+
+        /* Forms & Details */
+        .detail-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 8px;
+            font-size: 12px;
+        }
+        
+        .detail-label {
+            color: var(--text-muted);
+        }
+        
+        .form-group {
+            margin-bottom: 15px;
+        }
+        
+        .form-group label {
+            display: block;
+            font-size: 12px;
+            margin-bottom: 5px;
+            color: var(--text-muted);
+        }
+        
+        .form-group input, .form-group select, .form-group textarea {
+            width: 100%;
+            background: rgba(0,0,0,0.2);
+            border: 1px solid rgba(255,255,255,0.1);
+            color: white;
+            padding: 8px;
+            border-radius: 4px;
+        }
+
+        /* Modals */
+        #modals {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.7);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+        
+        .modal-content {
+            background: #111827;
+            border: 1px solid var(--panel-border);
+            border-radius: 8px;
+            width: 400px;
+            max-width: 90%;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+        }
+        
+        .modal-header {
+            padding: 15px;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+            font-weight: bold;
+            display: flex;
+            justify-content: space-between;
+        }
+        
+        .modal-body {
+            padding: 20px;
+        }
+        
+        .modal-footer {
+            padding: 15px;
+            border-top: 1px solid rgba(255,255,255,0.1);
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+        }
+
+        /* Alerts Area */
+        .alert-container {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            z-index: 50;
+            pointer-events: none;
+        }
+        
+        .alert-box {
+            background: rgba(239, 68, 68, 0.9);
+            color: white;
+            padding: 15px 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 15px rgba(239, 68, 68, 0.4);
+            font-size: 13px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            pointer-events: auto;
+            border-left: 4px solid #b91c1c;
+            animation: slideUp 0.3s ease-out;
+        }
+        
+        @keyframes slideUp {
+            from { transform: translateY(20px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+
+        .alert-content strong {
+            display: block;
+            font-size: 14px;
+            margin-bottom: 5px;
+        }
+
+        .badge {
+            background: rgba(255,255,255,0.2);
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 10px;
+        }
+
+        /* Presentation Mode styles */
+        body.presentation-mode .toolbar,
+        body.presentation-mode .right-panel,
+        body.presentation-mode header .header-controls,
+        body.presentation-mode header .system-stats {
+            display: none !important;
+        }
+        
+        body.presentation-mode header {
+            justify-content: center;
+        }
+        
+        .presentation-controls {
+            position: fixed;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(15, 23, 42, 0.9);
+            padding: 15px 30px;
+            border-radius: 30px;
+            border: 1px solid var(--panel-border);
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            z-index: 100;
+            display: none;
+        }
+        
+        body.presentation-mode .presentation-controls {
+            display: flex;
+        }
+
+        .step-text {
+            font-size: 16px;
+            font-weight: 600;
+            color: var(--cyan);
+            min-width: 300px;
+            text-align: center;
+        }
+        
+        .graph-preview {
+            background: rgba(0,0,0,0.3);
+            border-radius: 4px;
+            padding: 10px;
+            margin-top: 10px;
+            font-family: monospace;
+            white-space: pre;
+            font-size: 10px;
+        }
+
+        .role-selector {
+            background: rgba(0,0,0,0.3);
+            border: 1px solid var(--panel-border);
+            color: var(--text-main);
+            padding: 5px;
+            border-radius: 4px;
+            font-size: 12px;
+        }
+        
+        .comment-badge {
+            position: absolute;
+            top: -10px;
+            right: -10px;
+            background: var(--purple);
+            color: white;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 10px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <header>
+        <div class="header-title">
+            <h1>DATA FUSION PLATFORM</h1>
+            <p>Interactive Architecture & Data Flow Simulator</p>
+        </div>
+        
+        <div class="system-stats">
+            <div class="stat-item">
+                <span class="detail-label">System Status</span>
+                <span class="stat-value healthy" id="stat-status">● HEALTHY</span>
+            </div>
+            <div class="stat-item">
+                <span class="detail-label">Data Rate</span>
+                <span class="stat-value" id="stat-rate">24,850 events/sec</span>
+            </div>
+            <div class="stat-item">
+                <span class="detail-label">Processing Load</span>
+                <span class="stat-value" id="stat-load">67%</span>
+            </div>
+            <div class="stat-item">
+                <span class="detail-label">Kafka Queue</span>
+                <span class="stat-value" id="stat-queue">12,450 msgs</span>
+            </div>
+        </div>
+
+        <div class="header-controls">
+            <select class="role-selector" id="role-selector" onchange="changeRole()">
+                <option value="administrator">Administrator</option>
+                <option value="architect">Architect</option>
+                <option value="analyst">Analyst</option>
+                <option value="viewer">Viewer</option>
+            </select>
+            <button id="btn-play" onclick="toggleFlow()" class="active">▶ Flowing</button>
+            <button onclick="resetSimulation()">⟳ Reset</button>
+            <button onclick="togglePresentationMode()">Presentation</button>
+            <button onclick="saveArchitecture()">Save</button>
+        </div>
+    </header>
+
+    <div class="main-container">
+        <!-- Toolbar -->
+        <aside class="toolbar" id="toolbar">
+            <button class="tool-btn active" title="Select/Move (V)" onclick="setTool('select')">👆</button>
+            <button class="tool-btn" title="Connect (C)" onclick="setTool('connect')">🔗</button>
+            <button class="tool-btn" title="Add Node (N)" onclick="openAddNodeModal()">➕</button>
+            <button class="tool-btn" title="Add Comment (M)" onclick="setTool('comment')">💬</button>
+            <button class="tool-btn" title="Simulate (S)" onclick="openSimulateModal()">⚡</button>
+            <button class="tool-btn" title="Executive View" onclick="toggleExecutiveView()">👁</button>
+        </aside>
+
+        <!-- Canvas -->
+        <main class="canvas-container" id="canvas-container">
+            <svg id="architecture-canvas">
+                <defs>
+                    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+                        <path d="M 0 0 L 10 5 L 0 10 z" fill="rgba(148, 163, 184, 0.5)" />
+                    </marker>
+                    <marker id="arrow-active" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+                        <path d="M 0 0 L 10 5 L 0 10 z" fill="var(--cyan)" />
+                    </marker>
+                    <marker id="arrow-warning" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+                        <path d="M 0 0 L 10 5 L 0 10 z" fill="var(--orange)" />
+                    </marker>
+                </defs>
+                <g id="links-layer"></g>
+                <g id="particles-layer"></g>
+            </svg>
+            <div id="nodes-layer"></div>
+            
+            <div class="alert-container" id="alerts"></div>
+            
+            <div class="presentation-controls">
+                <button onclick="prevStep()">Previous</button>
+                <div class="step-text" id="presentation-text">Data enters from multiple domains.</div>
+                <button onclick="nextStep()">Next</button>
+                <button onclick="togglePresentationMode()">Exit</button>
+            </div>
+        </main>
+
+        <!-- Right Panel -->
+        <aside class="right-panel">
+            <div class="panel-tabs">
+                <button class="panel-tab active" onclick="switchPanel('details')">Details</button>
+                <button class="panel-tab" onclick="switchPanel('history')">Change Log</button>
+                <button class="panel-tab" onclick="switchPanel('review')">Review</button>
+            </div>
+            
+            <div class="panel-content" id="panel-details">
+                <div id="no-selection-msg" style="text-align: center; color: var(--text-muted); margin-top: 50px;">
+                    Select a component or connection to view details.
+                </div>
+                <div id="node-details" style="display: none;">
+                    <h3 id="det-title" style="margin-bottom: 15px; color: var(--cyan);">Component Details</h3>
+                    <div class="detail-row">
+                        <span class="detail-label">Type:</span>
+                        <span id="det-type">Data Source</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="detail-label">Status:</span>
+                        <span id="det-status" style="color: var(--green);">Active</span>
+                    </div>
+                    <div class="detail-row" id="row-rate">
+                        <span class="detail-label">Event Rate:</span>
+                        <span id="det-rate">8,500 / sec</span>
+                    </div>
+                    <div class="detail-row" id="row-load" style="display: none;">
+                        <span class="detail-label">Load:</span>
+                        <span id="det-load">45%</span>
+                    </div>
+                    
+                    <div style="margin-top: 20px;">
+                        <label style="font-size: 12px; color: var(--text-muted); margin-bottom: 5px; display: block;">Description / Role</label>
+                        <p id="det-desc" style="font-size: 12px; line-height: 1.4; background: rgba(0,0,0,0.2); padding: 10px; border-radius: 4px;"></p>
+                    </div>
+                    
+                    <div id="neo4j-controls" style="display: none; margin-top: 20px; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 15px;">
+                        <h4 style="margin-bottom: 10px; font-size: 12px;">Graph Operations</h4>
+                        <div style="display: flex; gap: 5px; flex-wrap: wrap;">
+                            <button onclick="addGraphNode()">+ Node</button>
+                            <button onclick="addGraphRel()">+ Relationship</button>
+                        </div>
+                        <div class="graph-preview" id="graph-preview">
+Person A
+   |
+OWNS
+   |
+Account B
+                        </div>
+                    </div>
+
+                    <div style="margin-top: 20px; display: flex; gap: 10px;">
+                        <button style="flex:1;" onclick="editSelected()">Edit</button>
+                        <button style="flex:1; background: rgba(239, 68, 68, 0.2); border-color: rgba(239, 68, 68, 0.5);" onclick="deleteSelected()">Delete</button>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="panel-content" id="panel-history" style="display: none;">
+                <h3 style="margin-bottom: 15px; font-size: 14px;">Architecture Change Log</h3>
+                <div id="history-list" style="display: flex; flex-direction: column; gap: 10px;">
+                    <!-- Populated by JS -->
+                </div>
+            </div>
+
+            <div class="panel-content" id="panel-review" style="display: none;">
+                <h3 style="margin-bottom: 15px; font-size: 14px;">Architecture Review</h3>
+                <div style="margin-bottom: 15px;">
+                    <h4 style="color: var(--green); font-size: 12px; margin-bottom: 5px;">STRENGTHS</h4>
+                    <ul style="font-size: 12px; color: var(--text-muted); padding-left: 20px;">
+                        <li>✓ Multi-source ingestion</li>
+                        <li>✓ Centralized search</li>
+                        <li>✓ Graph-based relationship analysis</li>
+                        <li>✓ Backpressure handling</li>
+                    </ul>
+                </div>
+                <div style="margin-bottom: 15px;">
+                    <h4 style="color: var(--orange); font-size: 12px; margin-bottom: 5px;">RISKS</h4>
+                    <ul style="font-size: 12px; color: var(--text-muted); padding-left: 20px;">
+                        <li>⚠ Elasticsearch overload risk</li>
+                        <li>⚠ Kafka consumer lag during spikes</li>
+                        <li>⚠ Neo4j/ES sync latency</li>
+                    </ul>
+                </div>
+                <div>
+                    <h4 style="color: var(--cyan); font-size: 12px; margin-bottom: 5px;">RECOMMENDATIONS</h4>
+                    <ul style="font-size: 12px; color: var(--text-muted); padding-left: 20px;">
+                        <li>✓ Keep Kafka for backpressure</li>
+                        <li>✓ Implement graph change events</li>
+                        <li>✓ Add RBAC controls</li>
+                    </ul>
+                </div>
+            </div>
+        </aside>
+    </div>
+
+    <!-- Modals -->
+    <div id="modals">
+        <!-- Add Node Modal -->
+        <div class="modal-content" id="modal-node" style="display: none;">
+            <div class="modal-header">
+                <span>Create Component</span>
+                <span style="cursor:pointer;" onclick="closeModal()">✕</span>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label>Node Name</label>
+                    <input type="text" id="inp-node-name" placeholder="e.g. Finance Events">
+                </div>
+                <div class="form-group">
+                    <label>Node Type</label>
+                    <select id="inp-node-type">
+                        <option value="source">Data Source</option>
+                        <option value="processor">Processor (Logstash)</option>
+                        <option value="database">Database (Elasticsearch)</option>
+                        <option value="broker">Message Broker (Kafka)</option>
+                        <option value="analytics">Analytics Service</option>
+                        <option value="graph">Graph Database (Neo4j)</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Description</label>
+                    <textarea id="inp-node-desc" rows="3"></textarea>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button style="background: transparent;" onclick="closeModal()">Cancel</button>
+                <button class="active" onclick="submitNode()">Create</button>
+            </div>
+        </div>
+
+        <!-- Connection Reason Modal -->
+        <div class="modal-content" id="modal-reason" style="display: none;">
+            <div class="modal-header">
+                <span>Architecture Change Reason</span>
+                <span style="cursor:pointer;" onclick="closeModal()">✕</span>
+            </div>
+            <div class="modal-body">
+                <p style="font-size: 12px; margin-bottom: 15px; color: var(--orange);">Please provide a reason for modifying the architecture.</p>
+                <div class="form-group">
+                    <label>Reason for change:</label>
+                    <textarea id="inp-reason" rows="4" placeholder="e.g. Prevent analysis services from being overloaded..."></textarea>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button style="background: transparent;" onclick="closeModal()">Cancel</button>
+                <button class="active" onclick="submitReason()">Save Change</button>
+            </div>
+        </div>
+
+        <!-- Simulate Modal -->
+        <div class="modal-content" id="modal-simulate" style="display: none;">
+            <div class="modal-header">
+                <span>Simulation Controls</span>
+                <span style="cursor:pointer;" onclick="closeModal()">✕</span>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label>Data Volume</label>
+                    <select id="sim-volume" onchange="updateSimulation()">
+                        <option value="1">Low</option>
+                        <option value="2" selected>Normal</option>
+                        <option value="5">High</option>
+                        <option value="10">Extreme</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Failure Injection</label>
+                    <div style="display: flex; flex-direction: column; gap: 8px; margin-top: 10px;">
+                        <label style="display:flex; align-items:center; gap:8px;"><input type="checkbox" id="fail-es" onchange="updateSimulation()"> Elasticsearch overloaded</label>
+                        <label style="display:flex; align-items:center; gap:8px;"><input type="checkbox" id="fail-kafka" onchange="updateSimulation()"> Kafka consumer slow</label>
+                        <label style="display:flex; align-items:center; gap:8px;"><input type="checkbox" id="fail-analytics" onchange="updateSimulation()"> Analysis service unavailable</label>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="active" onclick="closeModal()">Apply Settings</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // --- CONFIGURATION & STATE ---
+        const CONFIG = {
+            colors: {
+                source: '#06b6d4',
+                processor: '#3b82f6',
+                database: '#8b5cf6',
+                broker: '#f59e0b',
+                analytics: '#ef4444',
+                graph: '#10b981'
+            },
+            particleSpeed: 2,
+            particleSpawnRate: 50 // lower is faster
+        };
+
+        const STATE = {
+            nodes: [],
+            links: [],
+            particles: [],
+            history: [],
+            tool: 'select', // select, connect, comment
+            selectedNode: null,
+            selectedLink: null,
+            connectingFrom: null,
+            isPlaying: true,
+            role: 'administrator',
+            simulation: {
+                volumeMultiplier: 2,
+                failures: { es: false, kafka: false, analytics: false }
+            },
+            mouseX: 0,
+            mouseY: 0,
+            isDragging: false,
+            draggedNode: null,
+            presentationStep: 0
+        };
+
+        const canvas = document.getElementById('architecture-canvas');
+        const nodesLayer = document.getElementById('nodes-layer');
+        const linksLayer = document.getElementById('links-layer');
+        const particlesLayer = document.getElementById('particles-layer');
+        const alertsContainer = document.getElementById('alerts');
+
+        // --- INITIALIZATION ---
+        function init() {
+            // Load from storage or create default scenario
+            const saved = localStorage.getItem('fusionArchitecture');
+            if (saved) {
+                const data = JSON.parse(saved);
+                STATE.nodes = data.nodes;
+                STATE.links = data.links;
+                STATE.history = data.history || [];
+            } else {
+                setupDefaultScenario();
+            }
+
+            renderNodes();
+            renderLinks();
+            updateHistoryPanel();
+            
+            // Event Listeners for dragging and connecting
+            nodesLayer.addEventListener('mousedown', onNodeMouseDown);
+            nodesLayer.addEventListener('mousemove', onMouseMove);
+            window.addEventListener('mouseup', onMouseUp);
+            nodesLayer.addEventListener('mousemove', (e) => {
+                STATE.mouseX = e.clientX;
+                STATE.mouseY = e.clientY - 60; // offset header
+            });
+
+            // Start animation loop
+            requestAnimationFrame(animate);
+            
+            // Start simulation intervals
+            setInterval(simulationTick, 1000);
+            
+            // Add initial history
+            if (STATE.history.length === 0) {
+                addHistory('Architecture initialized', 'Loaded default scenario.', 'System');
+            }
+        }
+
+        function setupDefaultScenario() {
+            const w = window.innerWidth;
+            const h = window.innerHeight;
+            
+            const n = (id, title, type, x, y, desc, extra = {}) => ({
+                id, title, type, x, y, desc, status: 'active', ...extra
+            });
+
+            STATE.nodes = [
+                n('src1', 'CDR Sources', 'source', 100, 100, 'Telecom Call Data Records'),
+                n('src2', 'Finance Events', 'source', 100, 250, 'Banking & Transactions'),
+                n('src3', 'OSINT', 'source', 100, 400, 'Open Source Intelligence'),
+                
+                n('proc1', 'Logstash Processing Layer', 'processor', 350, 200, 'MAP → FILTER → CLEAN → NORMALIZE → ENRICH'),
+                
+                n('db1', 'Elasticsearch Cluster', 'database', 650, 200, '124.8M Documents. High volume scalable search.'),
+                
+                n('neo4j', 'Neo4j Intelligence Graph', 'graph', 650, 450, 'Interactive Relationship Intelligence Graph.', { isGraph: true }),
+                
+                n('reader', 'Incremental Reader', 'processor', 950, 150, 'Batch pull processor to prevent downstream overload.'),
+                
+                n('kafka', 'Kafka Message Broker', 'broker', 950, 300, 'Provides decoupling and backpressure.'),
+                
+                n('ana1', 'Domain Analysis', 'analytics', 1250, 100, 'Specific domain pattern detection.'),
+                n('ana2', 'Fusion Analysis', 'analytics', 1250, 250, 'Cross-entity evidence combining.'),
+                n('ana3', 'Cross-Domain Analysis', 'analytics', 1250, 400, 'Complex pattern detection across all domains.')
+            ];
+
+            const l = (id, src, dst, rate) => ({ id, src, dst, rate, active: true });
+            
+            STATE.links = [
+                l('l1', 'src1', 'proc1', 5),
+                l('l2', 'src2', 'proc1', 3),
+                l('l3', 'src3', 'proc1', 1),
+                
+                // Logstash splits original data to ES and metadata to Kafka
+                l('l4_data', 'proc1', 'db1', 8),
+                l('l4_meta', 'proc1', 'kafka', 4),
+                
+                // IR consumes metadata from Kafka
+                l('l5', 'kafka', 'reader', 6),
+                
+                // IR notifies Data Fusion Core (Domain & Fusion Analysis)
+                l('l6a', 'reader', 'ana1', 2),
+                l('l6b', 'reader', 'ana2', 2),
+                
+                // Data Fusion Core queries Elasticsearch directly
+                l('l7a', 'db1', 'ana1', 6),
+                l('l7b', 'db1', 'ana2', 6),
+                
+                // Merged output goes to Cross-Domain Analysis
+                l('l8a', 'ana1', 'ana3', 4),
+                l('l8b', 'ana2', 'ana3', 4),
+                
+                l('l10', 'db1', 'neo4j', 2), // Sync reference
+                l('l11', 'neo4j', 'db1', 1)  // Graph change events back to ES
+            ];
+        }
+
+        // --- RENDERERS ---
+        function renderNodes() {
+            nodesLayer.innerHTML = '';
+            STATE.nodes.forEach(node => {
+                const el = document.createElement('div');
+                el.className = `node ${node.status === 'warning' ? 'warning' : node.status === 'error' ? 'error' : ''} ${STATE.selectedNode?.id === node.id ? 'selected' : ''}`;
+                el.dataset.id = node.id;
+                el.dataset.type = node.type;
+                el.style.left = node.x + 'px';
+                el.style.top = node.y + 'px';
+                
+                let extraContent = '';
+                if (node.type === 'database') extraContent = `<div style="font-size:10px; margin-top:5px; color:var(--cyan)">Docs: 124.8M | Shards: 12</div>`;
+                if (node.type === 'broker') extraContent = `<div style="font-size:10px; margin-top:5px; color:var(--orange)">Queue: <span class="queue-val">0</span> msgs</div>`;
+                
+                el.innerHTML = `
+                    <div class="node-header">
+                        <span class="node-title">${node.title}</span>
+                        <div class="node-status"></div>
+                    </div>
+                    <div class="node-content">
+                        ${node.type.toUpperCase()}
+                        ${extraContent}
+                    </div>
+                `;
+                
+                // Comments indicator
+                if (node.comments && node.comments.length > 0) {
+                    const b = document.createElement('div');
+                    b.className = 'comment-badge';
+                    b.innerText = node.comments.length;
+                    el.appendChild(b);
+                }
+
+                nodesLayer.appendChild(el);
+            });
+        }
+
+        function renderLinks() {
+            linksLayer.innerHTML = '';
+            STATE.links.forEach(link => {
+                const src = STATE.nodes.find(n => n.id === link.src);
+                const dst = STATE.nodes.find(n => n.id === link.dst);
+                if (!src || !dst) return;
+
+                const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
+                path.setAttribute("id", `link-${link.id}`);
+                path.setAttribute("class", `connection-line ${link.active ? 'active' : ''} ${link.status === 'warning' ? 'warning' : ''}`);
+                
+                // Calculate centers
+                const sx = src.x + (src.type==='graph'?125:src.type==='processor'||src.type==='database'?110:100);
+                const sy = src.y + 35;
+                const dx = dst.x + (dst.type==='graph'?125:dst.type==='processor'||dst.type==='database'?110:100);
+                const dy = dst.y + 35;
+                
+                // Bezier curve
+                const d = `M ${sx} ${sy} C ${(sx+dx)/2} ${sy}, ${(sx+dx)/2} ${dy}, ${dx} ${dy}`;
+                path.setAttribute("d", d);
+                
+                if (link.active) {
+                    path.setAttribute("marker-end", `url(#arrow${link.status === 'warning' ? '-warning' : '-active'})`);
+                } else {
+                    path.setAttribute("marker-end", "url(#arrow)");
+                }
+
+                linksLayer.appendChild(path);
+            });
+            
+            // Draw temporary line if connecting
+            if (STATE.connectingFrom) {
+                const src = STATE.nodes.find(n => n.id === STATE.connectingFrom);
+                const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
+                const sx = src.x + 100;
+                const sy = src.y + 35;
+                path.setAttribute("d", `M ${sx} ${sy} L ${STATE.mouseX} ${STATE.mouseY}`);
+                path.setAttribute("class", "connection-line active");
+                linksLayer.appendChild(path);
+            }
+        }
+
+        // --- INTERACTION ---
+        function setTool(tool) {
+            if (STATE.role === 'viewer' && tool !== 'select') {
+                alert("Viewer role cannot modify architecture.");
+                return;
+            }
+            STATE.tool = tool;
+            document.querySelectorAll('.tool-btn').forEach(b => b.classList.remove('active'));
+            event.currentTarget.classList.add('active');
+            STATE.connectingFrom = null;
+            renderLinks();
+        }
+
+        function onNodeMouseDown(e) {
+            const nodeEl = e.target.closest('.node');
+            if (!nodeEl) {
+                selectNode(null);
+                return;
+            }
+            
+            const nodeId = nodeEl.dataset.id;
+            
+            if (STATE.tool === 'select') {
+                selectNode(nodeId);
+                STATE.isDragging = true;
+                STATE.draggedNode = nodeId;
+                
+                // Setup drag offsets
+                const node = STATE.nodes.find(n => n.id === nodeId);
+                node._dx = e.clientX - node.x;
+                node._dy = (e.clientY - 60) - node.y;
+            } 
+            else if (STATE.tool === 'connect') {
+                if (!STATE.connectingFrom) {
+                    STATE.connectingFrom = nodeId;
+                } else {
+                    if (STATE.connectingFrom !== nodeId) {
+                        createConnection(STATE.connectingFrom, nodeId);
+                    }
+                    STATE.connectingFrom = null;
+                }
+            }
+            else if (STATE.tool === 'comment') {
+                addComment(nodeId);
+                setTool('select');
+                document.querySelector('.tool-btn').classList.add('active'); // reset tool ui
+            }
+        }
+
+        function onMouseMove(e) {
+            if (STATE.isDragging && STATE.draggedNode) {
+                const node = STATE.nodes.find(n => n.id === STATE.draggedNode);
+                if (node) {
+                    node.x = e.clientX - node._dx;
+                    node.y = (e.clientY - 60) - node._dy;
+                    renderNodes();
+                    renderLinks();
+                }
+            } else if (STATE.connectingFrom) {
+                renderLinks(); // Update temp line
+            }
+        }
+
+        function onMouseUp(e) {
+            STATE.isDragging = false;
+            STATE.draggedNode = null;
+        }
+
+        function selectNode(id) {
+            STATE.selectedNode = STATE.nodes.find(n => n.id === id);
+            STATE.selectedLink = null;
+            renderNodes();
+            updateDetailsPanel();
+        }
+
+        // --- PANELS & UI ---
+        function switchPanel(panelId) {
+            document.querySelectorAll('.panel-content').forEach(p => p.style.display = 'none');
+            document.querySelectorAll('.panel-tab').forEach(t => t.classList.remove('active'));
+            document.getElementById(`panel-${panelId}`).style.display = 'block';
+            event.currentTarget.classList.add('active');
+        }
+
+        function updateDetailsPanel() {
+            const msg = document.getElementById('no-selection-msg');
+            const details = document.getElementById('node-details');
+            
+            if (!STATE.selectedNode) {
+                msg.style.display = 'block';
+                details.style.display = 'none';
+                return;
+            }
+            
+            msg.style.display = 'none';
+            details.style.display = 'block';
+            
+            const n = STATE.selectedNode;
+            document.getElementById('det-title').innerText = n.title;
+            document.getElementById('det-type').innerText = n.type.toUpperCase();
+            document.getElementById('det-status').innerText = n.status.toUpperCase();
+            document.getElementById('det-status').style.color = n.status === 'warning' ? 'var(--orange)' : n.status === 'error' ? 'var(--red)' : 'var(--green)';
+            document.getElementById('det-desc').innerText = n.desc;
+            
+            const isProc = ['processor', 'database', 'analytics'].includes(n.type);
+            document.getElementById('row-load').style.display = isProc ? 'flex' : 'none';
+            if (isProc) {
+                document.getElementById('det-load').innerText = n.status === 'error' ? '100% (OVERLOADED)' : Math.floor(Math.random()*40 + 30) + '%';
+            }
+            
+            document.getElementById('neo4j-controls').style.display = n.type === 'graph' ? 'block' : 'none';
+        }
+
+        function changeRole() {
+            STATE.role = document.getElementById('role-selector').value;
+            if (STATE.role === 'viewer') setTool('select');
+        }
+
+        function toggleFlow() {
+            STATE.isPlaying = !STATE.isPlaying;
+            const btn = document.getElementById('btn-play');
+            if (STATE.isPlaying) {
+                btn.innerText = '▶ Flowing';
+                btn.classList.add('active');
+            } else {
+                btn.innerText = '⏸ Paused';
+                btn.classList.remove('active');
+            }
+        }
+
+        // --- MODALS ---
+        let pendingAction = null;
+
+        function closeModal() {
+            document.getElementById('modals').style.display = 'none';
+            document.querySelectorAll('.modal-content').forEach(m => m.style.display = 'none');
+            pendingAction = null;
+        }
+
+        function openAddNodeModal() {
+            if (STATE.role === 'viewer' || STATE.role === 'analyst') {
+                alert("Role not authorized to modify architecture.");
+                return;
+            }
+            document.getElementById('modals').style.display = 'flex';
+            document.getElementById('modal-node').style.display = 'block';
+            document.getElementById('inp-node-name').value = '';
+        }
+
+        function submitNode() {
+            const title = document.getElementById('inp-node-name').value;
+            const type = document.getElementById('inp-node-type').value;
+            const desc = document.getElementById('inp-node-desc').value;
+            
+            if (!title) return;
+            
+            const id = 'n_' + Date.now();
+            STATE.nodes.push({
+                id, title, type, desc,
+                x: window.innerWidth / 2 - 100,
+                y: window.innerHeight / 2 - 50,
+                status: 'active'
+            });
+            
+            closeModal();
+            renderNodes();
+            
+            requestReason(`Added node: ${title}`, 'Node Creation');
+        }
+
+        function createConnection(srcId, dstId) {
+            // Check if exists
+            if (STATE.links.find(l => l.src === srcId && l.dst === dstId)) return;
+            
+            pendingAction = () => {
+                STATE.links.push({
+                    id: 'l_' + Date.now(),
+                    src: srcId,
+                    dst: dstId,
+                    rate: 3,
+                    active: true
+                });
+                renderLinks();
+            };
+            
+            requestReason(`Connected ${STATE.nodes.find(n=>n.id===srcId).title} to ${STATE.nodes.find(n=>n.id===dstId).title}`, 'Connection Created');
+        }
+
+        function requestReason(desc, type) {
+            document.getElementById('modals').style.display = 'flex';
+            document.getElementById('modal-reason').style.display = 'block';
+            document.getElementById('inp-reason').value = '';
+            document.getElementById('inp-reason').dataset.desc = desc;
+        }
+
+        function submitReason() {
+            const reason = document.getElementById('inp-reason').value;
+            if (!reason) {
+                alert("A reason is required for architecture changes.");
+                return;
+            }
+            const desc = document.getElementById('inp-reason').dataset.desc;
+            
+            addHistory(desc, reason, document.getElementById('role-selector').value);
+            
+            if (pendingAction) {
+                pendingAction();
+                pendingAction = null;
+            }
+            closeModal();
+        }
+
+        function addHistory(change, reason, user) {
+            STATE.history.unshift({
+                time: new Date().toLocaleTimeString(),
+                change, reason, user
+            });
+            updateHistoryPanel();
+            saveArchitecture();
+        }
+
+        function updateHistoryPanel() {
+            const hl = document.getElementById('history-list');
+            hl.innerHTML = '';
+            STATE.history.forEach((h, i) => {
+                hl.innerHTML += `
+                    <div style="background: rgba(255,255,255,0.05); padding: 10px; border-radius: 4px; border-left: 2px solid var(--cyan);">
+                        <div style="display:flex; justify-content:space-between; font-size:10px; color:var(--text-muted); margin-bottom:5px;">
+                            <span>#${STATE.history.length - i} | ${h.user}</span>
+                            <span>${h.time}</span>
+                        </div>
+                        <div style="font-size:12px; font-weight:bold; margin-bottom:5px;">${h.change}</div>
+                        <div style="font-size:11px; font-style:italic; color:var(--text-muted);">"${h.reason}"</div>
+                    </div>
+                `;
+            });
+        }
+
+        function deleteSelected() {
+            if (!STATE.selectedNode) return;
+            if (STATE.role === 'viewer' || STATE.role === 'analyst') {
+                alert("Unauthorized.");
+                return;
+            }
+            
+            pendingAction = () => {
+                STATE.links = STATE.links.filter(l => l.src !== STATE.selectedNode.id && l.dst !== STATE.selectedNode.id);
+                STATE.nodes = STATE.nodes.filter(n => n.id !== STATE.selectedNode.id);
+                STATE.selectedNode = null;
+                renderNodes();
+                renderLinks();
+                updateDetailsPanel();
+            };
+            
+            requestReason(`Removed node: ${STATE.selectedNode.title}`, 'Deletion');
+        }
+        
+        function editSelected() {
+            alert("Edit feature would open property editor.");
+        }
+
+        function saveArchitecture() {
+            localStorage.setItem('fusionArchitecture', JSON.stringify({
+                nodes: STATE.nodes,
+                links: STATE.links,
+                history: STATE.history
+            }));
+            showAlert("Architecture Saved", "Data successfully saved to localStorage.", "success");
+        }
+        
+        function resetSimulation() {
+            localStorage.removeItem('fusionArchitecture');
+            location.reload();
+        }
+
+        // --- ANIMATION & SIMULATION ---
+        
+        function animate() {
+            if (STATE.isPlaying && !document.body.classList.contains('presentation-mode')) {
+                // Spawn new particles based on link rates
+                STATE.links.forEach(link => {
+                    if (!link.active || link.status === 'error') return;
+                    
+                    const rate = link.rate * STATE.simulation.volumeMultiplier;
+                    if (Math.random() * 100 < rate) {
+                        spawnParticle(link);
+                    }
+                });
+
+                // Update particles
+                updateParticles();
+            }
+            
+            // Auto-play presentation
+            if (document.body.classList.contains('presentation-mode') && STATE.isPlaying) {
+                 STATE.links.forEach(link => {
+                    if (Math.random() * 100 < link.rate * 2) spawnParticle(link);
+                });
+                updateParticles();
+            }
+
+            requestAnimationFrame(animate);
+        }
+
+        function spawnParticle(link) {
+            const src = STATE.nodes.find(n => n.id === link.src);
+            const dst = STATE.nodes.find(n => n.id === link.dst);
+            if (!src || !dst) return;
+            
+            // Adjust start/end slightly to not be exactly at corner
+            const sx = src.x + 100;
+            const sy = src.y + 35;
+            const dx = dst.x + 100;
+            const dy = dst.y + 35;
+            
+            const p = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+            p.setAttribute("r", 3);
+            p.setAttribute("class", "particle");
+            
+            // Color based on source type
+            if (src.type === 'graph') p.style.fill = 'var(--green)';
+            if (src.type === 'processor') p.style.fill = 'var(--blue)';
+            if (src.type === 'database') p.style.fill = 'var(--purple)';
+            if (link.status === 'warning') p.style.fill = 'var(--orange)';
+            
+            particlesLayer.appendChild(p);
+            
+            STATE.particles.push({
+                el: p,
+                linkId: link.id,
+                sx, sy, dx, dy,
+                progress: 0,
+                speed: 0.005 + (Math.random() * 0.005) * (link.status === 'warning' ? 0.2 : 1)
+            });
+        }
+
+        function updateParticles() {
+            for (let i = STATE.particles.length - 1; i >= 0; i--) {
+                const p = STATE.particles[i];
+                p.progress += p.speed;
+                
+                if (p.progress >= 1) {
+                    // Reached end
+                    if (p.el.parentNode) p.el.parentNode.removeChild(p.el);
+                    STATE.particles.splice(i, 1);
+                } else {
+                    // Simple Bezier interpolation matching the link path
+                    const cx = (p.sx + p.dx) / 2;
+                    const cy1 = p.sy;
+                    const cy2 = p.dy;
+                    
+                    // Quadratic bezier approx for visual alignment
+                    const t = p.progress;
+                    const x = Math.pow(1-t, 2)*p.sx + 2*(1-t)*t*cx + Math.pow(t, 2)*p.dx;
+                    const y = Math.pow(1-t, 2)*p.sy + 2*(1-t)*t*cy1 + Math.pow(t, 2)*p.dy; // simplified
+                    
+                    p.el.setAttribute("cx", x);
+                    p.el.setAttribute("cy", y);
+                }
+            }
+        }
+
+        // --- SIMULATION LOGIC ---
+        let kafkaQueue = 12450;
+        
+        function openSimulateModal() {
+            document.getElementById('modals').style.display = 'flex';
+            document.getElementById('modal-simulate').style.display = 'block';
+        }
+
+        function updateSimulation() {
+            STATE.simulation.volumeMultiplier = parseFloat(document.getElementById('sim-volume').value);
+            STATE.simulation.failures.es = document.getElementById('fail-es').checked;
+            STATE.simulation.failures.kafka = document.getElementById('fail-kafka').checked;
+            STATE.simulation.failures.analytics = document.getElementById('fail-analytics').checked;
+        }
+
+        function simulationTick() {
+            if (!STATE.isPlaying) return;
+            
+            // Base rates
+            let ingestRate = 24850 * (STATE.simulation.volumeMultiplier / 2);
+            let processLoad = 45 * (STATE.simulation.volumeMultiplier / 2);
+            
+            // Apply failures
+            const dbNode = STATE.nodes.find(n => n.type === 'database');
+            const anaNodes = STATE.nodes.filter(n => n.type === 'analytics');
+            const kafkaLink = STATE.links.find(l => l.dst === 'kafka');
+            const esLinks = STATE.links.filter(l => l.dst === 'db1' || l.src === 'db1');
+            
+            if (STATE.simulation.failures.es && dbNode) {
+                dbNode.status = 'error';
+                esLinks.forEach(l => l.status = 'error');
+                processLoad += 50;
+                document.getElementById('stat-status').innerText = '⚠ ES OVERLOAD';
+                document.getElementById('stat-status').className = 'stat-value danger';
+            } else if (dbNode) {
+                dbNode.status = 'active';
+                esLinks.forEach(l => l.status = 'active');
+            }
+            
+            if (STATE.simulation.failures.analytics) {
+                anaNodes.forEach(n => n.status = 'error');
+                // Backpressure active
+                kafkaQueue += Math.floor(ingestRate / 10);
+                document.getElementById('stat-status').innerText = '⚠ BACKPRESSURE ACTIVE';
+                document.getElementById('stat-status').className = 'stat-value warning';
+                
+                // Show redirection in links
+                STATE.links.filter(l => l.src === 'kafka').forEach(l => {
+                    l.status = 'warning';
+                    l.rate = 0.5; // slows down
+                });
+            } else {
+                anaNodes.forEach(n => n.status = 'active');
+                if (kafkaQueue > 1000) kafkaQueue -= 1500; // draining
+                if (kafkaQueue < 0) kafkaQueue = 0;
+                STATE.links.filter(l => l.src === 'kafka').forEach(l => {
+                    l.status = 'active';
+                    l.rate = 3;
+                });
+                
+                if (!STATE.simulation.failures.es) {
+                    document.getElementById('stat-status').innerText = '● HEALTHY';
+                    document.getElementById('stat-status').className = 'stat-value healthy';
+                }
+            }
+            
+            // Update UI Stats
+            document.getElementById('stat-rate').innerText = ingestRate.toLocaleString() + ' events/sec';
+            document.getElementById('stat-load').innerText = Math.min(processLoad, 100).toFixed(0) + '%';
+            document.getElementById('stat-queue').innerText = kafkaQueue.toLocaleString() + ' msgs';
+            
+            // Update DOM nodes specifically for Kafka queue
+            const kafkaDOM = document.querySelector('.node[data-type="broker"] .queue-val');
+            if (kafkaDOM) kafkaDOM.innerText = kafkaQueue.toLocaleString();
+            
+            renderNodes();
+            renderLinks();
+            
+            // Random alerts
+            if (Math.random() < 0.05 * STATE.simulation.volumeMultiplier) {
+                generateAlert();
+            }
+        }
+
+        // --- ALERTS ---
+        function generateAlert() {
+            if (document.body.classList.contains('presentation-mode')) return;
+            
+            const alerts = [
+                "CROSS-DOMAIN PATTERN DETECTED: Person A linked to flagged Account via OSINT",
+                "FINANCIAL ANOMALY: Rapid transaction sequence detected in Node 42",
+                "GRAPH ENRICHMENT: New relationship synchronized to reference index"
+            ];
+            
+            const text = alerts[Math.floor(Math.random() * alerts.length)];
+            showAlert("INTELLIGENCE ALERT", text, "warning");
+        }
+
+        function showAlert(title, message, type="warning") {
+            const box = document.createElement('div');
+            box.className = 'alert-box';
+            if (type === 'success') {
+                box.style.background = 'rgba(16, 185, 129, 0.9)';
+                box.style.borderLeftColor = '#047857';
+            }
+            
+            box.innerHTML = `
+                <div style="font-size: 24px;">${type === 'success' ? '✓' : '⚠'}</div>
+                <div class="alert-content">
+                    <strong>${title}</strong>
+                    <span>${message}</span>
+                </div>
+                <button style="margin-left: auto; background: rgba(0,0,0,0.2);" onclick="this.parentNode.remove()">✕</button>
+            `;
+            alertsContainer.appendChild(box);
+            
+            setTimeout(() => {
+                if(box.parentNode) box.remove();
+            }, 6000);
+        }
+        
+        // --- NEO4J SPECIFIC ---
+        function addGraphRel() {
+            const preview = document.getElementById('graph-preview');
+            preview.innerHTML += `\n   |\nNEW_REL\n   |\nEntity ${Math.floor(Math.random()*100)}`;
+            showAlert("Graph Sync", "Graph reference successfully synchronized to Elasticsearch", "success");
+            
+            // Animate special particle from Neo4j to ES
+            const link = STATE.links.find(l => l.src === 'neo4j' && l.dst === 'db1');
+            if(link) {
+                for(let i=0; i<5; i++) setTimeout(() => spawnParticle(link), i*100);
+            }
+        }
+        
+        function addGraphNode() {
+            alert("Node creation form would appear here.");
+        }
+        
+        function addComment(nodeId) {
+            const node = STATE.nodes.find(n => n.id === nodeId);
+            const text = prompt(`Add comment to ${node.title}:`);
+            if (text) {
+                if(!node.comments) node.comments = [];
+                node.comments.push({ text, user: STATE.role, time: new Date().toLocaleTimeString() });
+                renderNodes();
+            }
+        }
+
+        // --- PRESENTATION MODE ---
+        const presentationSteps = [
+            "Data enters from multiple domains simultaneously.",
+            "Logstash processes, cleans, maps and normalizes the raw data.",
+            "Elasticsearch stores and indexes the data for high-speed reference.",
+            "When analysis demand increases, Kafka provides controlled buffering and backpressure.",
+            "Neo4j represents complex analyst-curated relationships.",
+            "Graph changes are synchronized back as searchable reference data in Elasticsearch.",
+            "Cross-Domain services discover patterns across combined intelligence.",
+            "Integrated Data → Connected Relationships → Actionable Decisions."
+        ];
+
+        function togglePresentationMode() {
+            document.body.classList.toggle('presentation-mode');
+            if (document.body.classList.contains('presentation-mode')) {
+                STATE.presentationStep = 0;
+                updatePresentation();
+                
+                // Zoom out slightly and center
+                const c = document.getElementById('canvas-container');
+                nodesLayer.style.transform = 'scale(0.9) translate(50px, 50px)';
+                document.getElementById('architecture-canvas').style.transform = 'scale(0.9) translate(50px, 50px)';
+            } else {
+                nodesLayer.style.transform = 'none';
+                document.getElementById('architecture-canvas').style.transform = 'none';
+            }
+        }
+
+        function updatePresentation() {
+            document.getElementById('presentation-text').innerText = presentationSteps[STATE.presentationStep];
+            
+            // Highlight relevant nodes based on step
+            STATE.nodes.forEach(n => { n.status = 'active'; n.highlight = false; });
+            STATE.links.forEach(l => { l.status = 'active'; });
+            
+            const step = STATE.presentationStep;
+            if (step === 0) STATE.nodes.filter(n=>n.type==='source').forEach(n=>n.status='warning'); // highlight
+            if (step === 1) STATE.nodes.find(n=>n.type==='processor').status='warning';
+            if (step === 2) STATE.nodes.find(n=>n.type==='database').status='warning';
+            if (step === 3) {
+                STATE.nodes.find(n=>n.type==='broker').status='warning';
+                document.querySelector('.node[data-type="broker"] .queue-val').innerText = "45,200";
+            }
+            if (step === 4 || step === 5) STATE.nodes.find(n=>n.type==='graph').status='warning';
+            if (step === 6) STATE.nodes.filter(n=>n.type==='analytics').forEach(n=>n.status='warning');
+            
+            renderNodes();
+            renderLinks();
+        }
+
+        function nextStep() {
+            if (STATE.presentationStep < presentationSteps.length - 1) {
+                STATE.presentationStep++;
+                updatePresentation();
+            }
+        }
+        function prevStep() {
+            if (STATE.presentationStep > 0) {
+                STATE.presentationStep--;
+                updatePresentation();
+            }
+        }
+        
+        function toggleExecutiveView() {
+            alert("Executive View: Simplified dashboard overlay would render here displaying only KPIs and top-level flows.");
+        }
+
+        // Start
+        window.onload = init;
+    </script>
+</body>
+</html>

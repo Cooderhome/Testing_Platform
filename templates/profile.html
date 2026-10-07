@@ -1,0 +1,48 @@
+{% extends 'base.html' %}
+{% block title %}Profile - AppCritic{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2 class="h3 mb-0 text-gray-800">User Profile</h2>
+</div>
+<div class="row">
+    <div class="col-md-4 mb-4">
+        <div class="card shadow-sm text-center h-100">
+            <div class="card-body py-5">
+                <div class="display-1 text-primary mb-3">
+                    <i class="bi bi-person-circle"></i>
+                </div>
+                <h4 class="mb-1">{{ profile_user.username }}</h4>
+                <p class="text-muted mb-3">{{ profile_user.email }}</p>
+                <span class="badge bg-primary fs-6">{{ profile_user.get_role_display }}</span>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-8 mb-4">
+        <div class="card shadow-sm h-100">
+            <div class="card-body">
+                <h5 class="card-title mb-4">Account Details</h5>
+                <form>
+                    <div class="mb-3 row">
+                        <label class="col-sm-3 col-form-label text-muted">Organization</label>
+                        <div class="col-sm-9">
+                            <input type="text" class="form-control-plaintext fw-bold" value="{{ profile_user.organization.name|default:'No Organization' }}" readonly>
+                        </div>
+                    </div>
+                    <div class="mb-3 row">
+                        <label class="col-sm-3 col-form-label text-muted">Account Status</label>
+                        <div class="col-sm-9">
+                            <input type="text" class="form-control-plaintext fw-bold text-success" value="{% if profile_user.is_active %}Active{% else %}Inactive{% endif %}" readonly>
+                        </div>
+                    </div>
+                    <div class="mb-3 row">
+                        <label class="col-sm-3 col-form-label text-muted">Date Joined</label>
+                        <div class="col-sm-9">
+                            <input type="text" class="form-control-plaintext fw-bold" value="{{ profile_user.date_joined|date:'F d, Y' }}" readonly>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

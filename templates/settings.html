@@ -1,0 +1,24 @@
+{% extends 'base.html' %}
+{% block title %}Settings - AppCritic{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2 class="h3 mb-0 text-gray-800">Organization Settings</h2>
+</div>
+<div class="card shadow-sm">
+    <div class="card-body">
+        <h5 class="card-title">General Settings</h5>
+        <form>
+            <div class="mb-3">
+                <label class="form-label">Organization Name</label>
+                <input type="text" class="form-control" value="{{ settings_user.organization.name|default:'No Organization' }}" disabled>
+            </div>
+            <div class="mb-3">
+                <label class="form-label">Domain</label>
+                <input type="text" class="form-control" value="{{ settings_user.organization.domain|default:'' }}" disabled>
+            </div>
+            <button type="button" class="btn btn-primary" disabled>Save Changes</button>
+            <small class="text-muted d-block mt-2">Configuration is read-only in MVP mode.</small>
+        </form>
+    </div>
+</div>
+{% endblock %}
